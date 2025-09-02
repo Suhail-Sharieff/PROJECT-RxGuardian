@@ -1,42 +1,32 @@
-import { asyncHandler } from "../Utils/asyncHandler.utils.js";
+import jwt from "jsonwebtoken";
 import { ApiError } from "../Utils/Api_Error.utils.js";
-import jwt from "jsonwebtoken"
-/*API headers are present in both requests and responses, offering a way to pass information between the client and server that isn't directly related to the body content of the API call. For instance, headers can indicate the format of the request body, specify the desired format for the response, handle authentication, and control cache behavior.
-*/
-export const verifyJWT = asyncHandler(async (req, res, next) => {
-    console.log("Matching JWT tokens...");
-    console.log("Fetching current token...");
 
-    const currJwtToken = req.cookies?.refreshToken || req.cookies?.accessToken||
+export const verifyJWT = (req, res, next) => {
+  try {
+    // Get token from cookie or header
+    const token =
+      req.cookies?.accessToken||
         req.header("authorization")?.replace(/Bearer\s*/i, "").trim();
 
-     console.log(`Cookies received: ${JSON.stringify(req.cookies)}, headers received: ${JSON.stringify(req.headers)}`);
-
-    if (!currJwtToken) {
-        console.error("No token found in cookies or headers.");
-        throw new ApiError(400, "Unauthorized access! Token is missing.");
+    if (!token) {
+      throw new ApiError(401, "Unauthorized, token missing!");
     }
 
-    console.log("Access is authorized...");
-    console.log("JWT is verifying tokens...");
+    // Verify token
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-    let decodedToken;
-    try {
-        decodedToken = jwt.verify(currJwtToken, process.env.REFRESH_TOKEN_SECRET);
-    } catch (error) {
-        console.error("Error verifying token:", error.message);
-        throw new ApiError(401, "Invalid or expired token.");
-    }
+    // Attach decoded pharmacist details to req
+    req.pharmacist = {
+      pharmacist_id: decoded.pharmacist_id,
+      email: decoded.email,
+      name: decoded.name,
+    };
 
-    // const user = await User.findById(decodedToken?._id).select("-password -refreshToken");
-
-    if (!user) {
-        throw new ApiError(401, "Invalid access token. User not found.");
-    }
-
-    console.log("Tokens matched successfully...");
-    console.log("Adding user field to request...");
-    req.user = user;
-
+    // console.log("✅ JWT verified, pharmacist attached:", req.pharmacist);
+    console.log("'pharmacist' can be now accesed using req.pharmacist");
     next();
-});
+  } catch (err) {
+    console.error("❌ JWT verification failed:", err.message);
+    next(new ApiError(401, "Unauthorized, invalid or expired token!"));
+  }
+};

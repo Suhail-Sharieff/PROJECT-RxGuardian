@@ -9,4 +9,4 @@ address varchar(100) NOT NULL,
 phone varchar(20) NOT NULL,
 password varchar(20) NOT NULL,
 email varchar(50) unique not null
-) ) `
+)`

@@ -21,6 +21,8 @@ const generateRefreshToken = (pharmacist)=>{
     return jwt.sign(
         {
             pharmacist_id: pharmacist.pharmacist_id,
+            email: pharmacist.email,
+            name: pharmacist.name,
             
         },
         process.env.REFRESH_TOKEN_SECRET,
@@ -35,7 +37,7 @@ Refresh Token: This is a longer-lived token used to obtain a new access token wi
 const get_refresh_access_token=async(pharmacist_id)=>{
     try {
         console.log("Generating toekns for pharmacist.......");
-        const curr_pharmacist=getPharmacistById(pharmacist_id)
+        const curr_pharmacist=await getPharmacistById(pharmacist_id)
         const refreshToken=generateRefreshToken(curr_pharmacist);
         const accessToken=generateAccessToken(curr_pharmacist);
         console.log(`Refresh and accss tokens are generated.....`);
