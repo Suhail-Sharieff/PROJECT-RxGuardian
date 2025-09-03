@@ -44,6 +44,4 @@ pharmacistRouter
 
 
 
-
-
 export {pharmacistRouter}

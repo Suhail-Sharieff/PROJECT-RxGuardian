@@ -3,7 +3,7 @@ import { ApiError } from "../Utils/Api_Error.utils.js"
 import { ApiResponse } from "../Utils/Api_Response.utils.js";
 import { get_refresh_access_token } from "../Utils/token_generator.utils.js";
 import { db } from "../Utils/sql_connection.utils.js";
-
+import bcrypt from "bcrypt";
 
 
 const pharmacistRegisteredAlready = async (email) => {
@@ -20,7 +20,7 @@ const pharmacistRegisteredAlready = async (email) => {
 
     return rows.length > 0; 
 };
-import bcrypt from "bcrypt";
+
 const registerPharmacist = asyncHandler(
 
     async (req, res) => {
@@ -273,4 +273,7 @@ const updateName = asyncHandler(async (req, res) => {
 });
 
 
-export { registerPharmacist, loginPharmacist, logoutPharmacist, updatePassword, updateName, getPharmacistById }
+
+
+
+export { registerPharmacist, loginPharmacist, logoutPharmacist, updatePassword, updateName, getPharmacistById}
