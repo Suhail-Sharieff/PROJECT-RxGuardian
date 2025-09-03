@@ -34,3 +34,76 @@ const createShop=`CREATE TABLE shop (
     CONSTRAINT fk_manager FOREIGN KEY (manager_id) REFERENCES pharmacist(pharmacist_id) on delete set null
 );
 `
+
+const drug_table=
+`create table drug
+(
+drug_id int primary key,
+type varchar(50)  not null,
+barcode varchar(50) not null unique,
+dose double not null,
+code varchar(50),
+cost_price double not null,
+selling_price double not null,
+manufacturer_id int,
+production_date date not null default (current_date()),
+expiry_date date not null,
+name varchar(50) not null,
+constraint fk_drug_manufacturer
+foreign key (manufacturer_id)
+references manufacturer(manufacturer_id)
+on delete cascade
+)
+DELIMITER $$
+
+-- Insert check
+CREATE TRIGGER trg_check_drug_validity
+BEFORE INSERT ON drug
+FOR EACH ROW
+BEGIN
+    -- Check expiry after production
+    IF NEW.expiry_date <= NEW.production_date THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Expiry date must be after production date';
+    END IF;
+
+    -- Check selling price >= cost price
+    IF NEW.selling_price < NEW.cost_price THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Selling price cannot be less than cost price';
+    END IF;
+END$$
+
+-- Update check
+CREATE TRIGGER trg_check_drug_update
+BEFORE UPDATE ON drug
+FOR EACH ROW
+BEGIN
+    IF NEW.expiry_date <= NEW.production_date THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Expiry date must be after production date';
+    END IF;
+
+    IF NEW.selling_price < NEW.cost_price THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Selling price cannot be less than cost price';
+    END IF;
+END$$
+
+DELIMITER ;
+`
+
+const sale=
+`create table sale (
+    sale_id INT primary key auto_increment,
+    date datetime default NOW()
+);
+create table sale_item(
+sale_item int primary key auto_increment,
+sale_id int,
+drug_id int,
+quantity int not null,
+discount double not null,
+foreign key(sale_id) references sale(sale_id) on delete cascade,
+foreign key(drug_id) references drug(drug_id) on delete set null
+)`

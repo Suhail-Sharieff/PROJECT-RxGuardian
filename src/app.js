@@ -62,6 +62,9 @@ app.use('/manufacturer',manufacturerRoute)
 import { shopRouter } from "./routes/shop.routes.js"
 app.use('/shop',shopRouter)
 
+import { drugRouter } from "./routes/drug.router.js"
+app.use('/drug',drugRouter)
+
 import { ApiError } from "./Utils/Api_Error.utils.js"
 app.use((err, req, res, next) => {
     console.log(`ERROR: ${err.message}`);
