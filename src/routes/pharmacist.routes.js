@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { registerPharmacist,loginPharmacist, logoutPharmacist, updatePassword, updateName} from "../controllers/pharmacist.controller.js"
+import { registerPharmacist,loginPharmacist, logoutPharmacist, updatePassword, updateName, refreshAccessToken} from "../controllers/pharmacist.controller.js"
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const pharmacistRouter=Router()
@@ -41,6 +41,7 @@ pharmacistRouter
     updateName
 )
 
+pharmacistRouter.route("/refresh-token").post(refreshAccessToken);
 
 
 

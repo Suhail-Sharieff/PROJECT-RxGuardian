@@ -272,8 +272,80 @@ const updateName = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { newfullName: newName }, "Full name updated successfully!"));
 });
 
+import jwt from "jsonwebtoken"; // Make sure jwt is imported at the top of the file
+
+
+
+//--------------super imp for maintaining state in frontend side
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    console.log("Refresh token API called...");
+
+    // 1. Get the token from the Authorization header sent by Flutter
+    const authHeader = req.headers['authorization'];
+    const incomingRefreshToken = authHeader && authHeader.split(' ')[1]; // Format: "Bearer TOKEN"
+
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "Refresh token is missing");
+    }
+
+    console.log("Verifying refresh token...");
+
+    // 2. Verify the token using your secret key
+    const decodedToken = jwt.verify(
+        incomingRefreshToken,
+        process.env.REFRESH_TOKEN_SECRET // Ensure this is the correct secret from your .env file
+    );
+
+    // 3. Find the pharmacist in the database using the ID from the token
+    const [rows] = await db.execute(
+        `SELECT * FROM pharmacist WHERE pharmacist_id = ?`,
+        [decodedToken.pharmacist_id]
+    );
+
+    if (rows.length === 0) {
+        throw new ApiError(401, "Invalid refresh token. Pharmacist not found.");
+    }
+
+    const pharmacist = rows[0];
+
+    // Optional but recommended: Check if the incoming token matches the one stored in the DB
+    // This prevents replay attacks if a token is stolen but the user has logged in again since.
+    if (incomingRefreshToken !== pharmacist.refreshToken) {
+        throw new ApiError(401, "Refresh token is expired or has been invalidated.");
+    }
+    
+    // 4. Generate a new set of tokens (or just the access token)
+    // Your get_refresh_access_token should be able to generate a new accessToken
+    // Let's assume you have a separate function for just the access token for efficiency
+    const newAccessToken = jwt.sign(
+        {
+            pharmacist_id: pharmacist.pharmacist_id,
+            email: pharmacist.email,
+            name: pharmacist.name,
+        },
+        process.env.ACCESS_TOKEN_SECRET, // Ensure this is the correct secret
+        { expiresIn: "1d" } // Set a new expiration for the access token
+    );
+
+    // Remove sensitive data before sending back
+    delete pharmacist.password;
+    
+    console.log(`Access token refreshed for pharmacist ID: ${pharmacist.pharmacist_id}`);
+
+    // 5. Send the new access token and pharmacist data back to the app
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                accessToken: newAccessToken,
+                pharmacist: pharmacist, // Send the full pharmacist object back
+            },
+            "Access token refreshed successfully!"
+        )
+    );
+});
 
 
 
 
-export { registerPharmacist, loginPharmacist, logoutPharmacist, updatePassword, updateName, getPharmacistById}
+export { registerPharmacist, loginPharmacist, logoutPharmacist, updatePassword, updateName, getPharmacistById,refreshAccessToken}
