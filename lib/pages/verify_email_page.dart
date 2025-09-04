@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/colors.dart';
 import '../constants/routes.dart';
-import '../services/auth/auth_methods.dart';
+import '../controllers/auth_controller.dart';
 import '../widgets/show_toast.dart';
 
 
@@ -29,7 +29,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
   Future<void> _handleSendVerification(BuildContext context) async {
     // Your logic to send the verification link
-    await AuthMethods.sendVerifyLink(context: context);
+    await AuthController.sendVerifyLink(context: context);
     showToast(context, 'Email sent! Pls login!', ToastType.SUCCESS);
     // For this UI demo, we'll just toggle the state
     if (_emailController.text.isNotEmpty) {

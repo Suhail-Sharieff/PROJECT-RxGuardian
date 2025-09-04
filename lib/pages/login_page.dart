@@ -1,12 +1,14 @@
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:rxGuardian/pages/signup_page.dart';
 import 'package:rxGuardian/pages/verify_email_page.dart';
 import '../constants/RxGuardianLogo.dart';
 import '../constants/enums.dart';
 import '../constants/routes.dart';
-import '../services/auth/auth_methods.dart';
+import '../controllers/auth_controller.dart';
 
 import '../constants/colors.dart';
 import 'forgot_password_page.dart';
@@ -24,7 +26,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _passwordVisible = false;
-
+  final AuthController contr = Get.find();
   @override
   void dispose() {
     _emailController.dispose();
@@ -152,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           onPressed: () async {
-            SignedUpUserStatus st = await AuthMethods.signIn(
+            SignedUpUserStatus st = await contr.signIn(
                 email: _emailController.text,
                 password: _passwordController.text, context: context);
             if (st == SignedUpUserStatus.IS_EMAIL_VERFIED) {

@@ -1,5 +1,6 @@
 
 import 'package:flutter/cupertino.dart';
+import 'package:get/get_navigation/src/routes/get_route.dart';
 
 import '../pages/forgot_password_page.dart';
 import '../pages/home_page.dart';
@@ -19,11 +20,15 @@ const home_route='/home/';
 
 
 
-final Map<String, WidgetBuilder> routes = {
-  LandingPage.route_name:(_)=>const LandingPage(),
-  HomePage.route_name:(_)=>const HomePage(),
-  LoginPage.route_name:(_)=>const LoginPage(),
-  ForgotPassWordPage.route_name:(_)=>const ForgotPassWordPage(),
-  SignupPage.route_name:(_)=>const SignupPage(),
-  VerifyEmailPage.route_name:(_)=>const VerifyEmailPage(),
-};
+
+
+class AppPages {
+  static final List<GetPage> pages = [
+    GetPage(name: home_route, page: () => const HomePage(),),
+    GetPage(name: landing_route, page: () => const LandingPage(),),
+    GetPage(name: login_route,page: () => const LoginPage(),),
+    GetPage(name: signup_route,page: () => const SignupPage(),),
+    GetPage(name: verify_email_route,page: () => const VerifyEmailPage(),),
+    GetPage(name: forgot_password_route, page: ()=>const ForgotPassWordPage()),
+  ];
+}

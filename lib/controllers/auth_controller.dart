@@ -1,186 +1,231 @@
-import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' show log;
-import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:developer';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get_rx/src/rx_types/rx_types.dart';
+import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/user.dart';
-import '../network/http_exception_handler.dart';
+import '../constants/enums.dart';
+import '../models/pharmacist.dart';
 import '../network/network_constants.dart';
 import '../network/response_handler.dart';
+import '../widgets/show_toast.dart';
 
-class AuthController extends GetxController{
+class AuthController extends GetxController {
+  static final instance = FirebaseAuth.instance;
 
-  final Rx<User?> user = Rx<User?>(null);
+  final Rx<Pharmacist?> user = Rx<Pharmacist?>(null);
   String? accessToken;
 
-  /// Logs in the user with their email and password.
-  Future<User?> loginWithEmailAndPassword(
-      String? email,
-      String? password,
-      BuildContext context,
-      ) async {
+  Future<bool> signUp({
+    required String email,
+    required String password,
+    required String name,
+    required String dob,
+    required String address,
+    required String phone,
+    required BuildContext context,
+  }) async {
     try {
-      var url = Uri.http(main_uri, '/api/users/login'); // Replace with your main_uri
+      if (email.isEmpty || password.isEmpty) {
+        showToast(context, 'Enter proper email/password !', ToastType.WARNING);
+        return false;
+      }
+    final userCredential=await instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if(!userCredential.user!.emailVerified) return false;
+
+      var url = Uri.http(main_uri, '/auth/register');
       var res = await http.post(
         url,
-        body: {"password": password, "email": email},
+        body: {'name':name,'dob':dob,'address':address,'phone':phone,'password':password,'email':email},
+        headers: {'authorization': 'Bearer $accessToken'},
+      );
+      if(ResponseHandler.is_good_response(res, context)){
+        return true;
+      }
+      return false;
+    } catch (e) {
+      showToast(context, e.toString(), ToastType.ERROR);
+    }
+    return false;
+  }
+
+  Future<SignedUpUserStatus> signIn({
+    required String email,
+    required String password,
+    required BuildContext context,
+  }) async {
+    try {
+      // --- STEP 1: Authenticate with Firebase ---
+      log("Signing in with Firebase...");
+      final userCredential = await instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (userCredential.user == null) {
+        return SignedUpUserStatus.INVALID;
+      }
+
+      // --- STEP 2: Check for email verification ---
+      if (!userCredential.user!.emailVerified) {
+        log("Email not verified for ${userCredential.user!.email}");
+        showToast(context, "Please verify your email before logging in.", ToastType.WARNING);
+        return SignedUpUserStatus.IS_NOT_EMAIL_VERFIED;
+      }
+      log("Firebase sign-in successful and email is verified.");
+
+      // --- STEP 3: Authenticate with your backend ---
+      log("Signing in with backend server...");
+      var url = Uri.http(main_uri, '/auth/login');
+      var res = await http.post(
+        url,
+        body: {"password": password, "email": email}, // Or send Firebase ID token
       ).timeout(const Duration(seconds: 10));
 
-      // Assuming ResponseHandler checks for res.statusCode == 200
-      if (res.statusCode != 200) {
-        // Handle non-200 responses appropriately
-        log('Login failed with status: ${res.statusCode}');
-        return null;
+      if (res.statusCode != 200) { // Check for a successful status code
+        log("Backend login failed with status: ${res.statusCode}");
+        showToast(context, "Backend authentication failed.", ToastType.ERROR);
+        return SignedUpUserStatus.INVALID;
       }
 
-      // 1. Decode the entire response and get the 'data' object.
+      // --- STEP 4: Process backend response and update state ---
       var responseData = jsonDecode(res.body)['data'];
-
-      // 2. The user object is under the key 'pharmacist', not 'user'.
       var pharmacistJson = responseData['pharmacist'];
-      if (pharmacistJson == null) {
-        log('Error: Pharmacist data is null in the response.');
-        return null;
-      }
 
-      // 3. The access and refresh tokens are directly inside 'data'.
       final newAccessToken = responseData['accessToken'];
       final newRefreshToken = responseData['refreshToken'];
 
-      // 4. Create the User object from the 'pharmacist' JSON.
-      final loggedInUser = User.fromJson(pharmacistJson);
-      log('Logged in user: ${loggedInUser.toString()}');
-
-      // 5. Update the controller's state.
-      // Use .value to update an Rx variable.
+      final loggedInUser = Pharmacist.fromJson(pharmacistJson);
+      // log(loggedInUser.toString());
       this.user.value = loggedInUser;
-      this.accessToken = newAccessToken; // Store accessToken for the session
+      this.accessToken = newAccessToken;
 
-      // 6. Save the refresh token for long-term persistence.
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('refreshToken', newRefreshToken);
 
-      log('Login successful. Refresh token saved.');
+      log('Backend login successful. User state updated.');
+      return SignedUpUserStatus.IS_EMAIL_VERFIED;
 
-      return loggedInUser;
-
-    } on Exception catch (e) {
-      // Assuming HttpExceptionHandler is a custom class to show alerts/snackbars
-      log('An exception occurred: $e');
-      // HttpExceptionHandler.handle(e, context);
+    } on FirebaseAuthException catch (e) {
+      log("Firebase sign-in error: ${e.code}");
+      showToast(context, e.message ?? "Invalid credentials.", ToastType.ERROR);
+      return SignedUpUserStatus.INVALID;
+    } on Exception catch(e) {
+      log("A general exception occurred during sign-in: $e");
+      showToast(context, "An error occurred. Please try again.", ToastType.ERROR);
+      return SignedUpUserStatus.INVALID;
     }
-    return null;
   }
 
-  /// Checks if a refresh token exists in persistent storage.
-  Future<bool> isLoggedIn(BuildContext context) async {
+  static Future<void> sendVerifyLink({required BuildContext context}) async {
+    try {
+      await instance.currentUser?.sendEmailVerification();
+    } catch (e) {
+      showToast(
+        context,
+        "Some error occurred in sending mail!",
+        ToastType.ERROR,
+      );
+    }
+  }
+
+  //------------to maintain conn with server even on refresh -----VVVIMP
+  Future<bool> tryToRestoreSession(BuildContext context) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.containsKey('refreshToken');
+      final savedRefreshToken = prefs.getString('refreshToken');
+
+      // If no token is found, there's no session to restore.
+      if (savedRefreshToken == null || savedRefreshToken.isEmpty) {
+        log("No refresh token found. User is not logged in.");
+        return false;
+      }
+
+      log("Found refresh token. Attempting to restore session...");
+
+      // --- Call your NEW backend endpoint for refreshing the token ---
+      var url = Uri.http(main_uri, '/auth/refresh-token'); // IMPORTANT: This endpoint must exist!
+      var res = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $savedRefreshToken', // Send token in header
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      // If the token is expired or invalid, the backend should return 401 or 403
+      if (res.statusCode != 200) {
+        log("Session restoration failed. Refresh token is invalid or expired. Status: ${res.statusCode}");
+        // It's good practice to log the user out to clear the invalid token
+        await logout(context: context);
+        return false;
+      }
+
+      // --- Process the successful response ---
+      var responseData = jsonDecode(res.body)['data'];
+      var pharmacistJson = responseData['pharmacist'];
+      final newAccessToken = responseData['accessToken']; // Backend must return a new access token
+
+      if (pharmacistJson == null || newAccessToken == null) {
+        log("Session restoration failed: Invalid data from backend.");
+        return false;
+      }
+
+      // --- Update the application state with the restored session data ---
+      final loggedInUser = Pharmacist.fromJson(pharmacistJson);
+      this.user.value = loggedInUser;
+      this.accessToken = newAccessToken;
+
+      log('Session restored successfully for ${loggedInUser.name}');
+      return true;
+
     } on Exception catch (e) {
-      log('An exception occurred: $e');
-      // HttpExceptionHandler.handle(e, context);
+      log("An exception occurred during session restoration: $e");
+      return false;
     }
-    return false;
   }
 
-
-  Future<bool> logout(BuildContext context) async {
+  Future<void> logout({required BuildContext context}) async {
     try {
+      await instance.signOut();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('refreshToken');
-      var url=Uri.http(main_uri,'/api/users/logout');
+      var url=Uri.http(main_uri,'/auth/logout');
       // log('logout out using ref token: $my_ref_token');
       var res=await http.post(url,headers:
       {
-        'authorization': 'Bearer $my_ref_token'
+        'authorization': 'Bearer $accessToken'
       });
-      if(ResponseHandler.is_good_response(res, context)){
-        return true;
+      if(!ResponseHandler.is_good_response(res, context)){
+        showToast(context, "Server failed to logout! Pls login again", ToastType.ERROR);
       }
-
-    } on Exception catch (e) {
-      HttpExceptionHandler.handle(Exception("Cant logout!"), context);
+      user.value=null;
+      accessToken=null;
+      showToast(context, "Logout success", ToastType.SUCCESS);
+    } catch (e) {
+      showToast(
+        context,
+        "Some error occurred in logging out!",
+        ToastType.ERROR,
+      );
     }
-    return false;
+  }
+  Future<void> updatePassword({required BuildContext context,required String oldPassword,required String newPassword})async{
+    try{
+      await instance.sendPasswordResetEmail(email: user.value!.email!);
+    }catch(e){
+      showToast(context, "Failed to update password", ToastType.ERROR);
+    }
+  }
+  Pharmacist? getPharmacist(){
+    return user.value;
   }
 
-
-  Future<bool>updatePassword(BuildContext context,String oldPassword,String newPassword) async {
-    try {
-      var url=Uri.http(main_uri,'/api/users/updatePassword');
-      // log('logout out using ref token: $my_ref_token');
-      var res=await http.post(url,
-          body: {
-            'oldPassword':oldPassword,
-            'newPassword':newPassword,
-          },
-          headers:
-          {
-            'authorization': 'Bearer $my_ref_token'
-          });
-
-      if(ResponseHandler.is_good_response(res, context)){
-        return true;
-      }
-    } on Exception catch (e) {
-      HttpExceptionHandler.handle(e, context );
-    }
-    return false;
-  }
-
-
-
-
-  Future<bool> registerUser(BuildContext context,
-      String? email,
-      String? password,) async {
-    try {
-      var uri = Uri.http(main_uri, '/api/users/register');
-      final request = http.MultipartRequest('POST', uri);
-
-      request.fields['email'] = email ?? '';
-      request.fields['userName'] = userName ?? '';
-      request.fields['password'] = password ?? '';
-      request.fields['fullName'] = fullName ?? '';
-
-      if (profileImage != null && profileImage.path.isNotEmpty) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'avatar',
-            profileImage.path,
-            contentType: MediaType('image', 'jpeg'), // or 'png' if applicable
-          ),
-        );
-      }
-
-// Cover Image
-      if (coverImage != null && coverImage.path.isNotEmpty) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'coverImage',
-            coverImage.path,
-            contentType: MediaType('image', 'jpeg'), // or 'png' if applicable
-          ),
-        );
-      }
-
-      final response = await request.send().timeout(
-          const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        log('User registered successfully');
-        return true;
-      } else {
-        HttpExceptionHandler.handle(Exception("Registration failed"), context);
-      }
-    } on Exception catch (e) {
-      HttpExceptionHandler.handle(e, context);
-    }
-    return false;
-  }
 }

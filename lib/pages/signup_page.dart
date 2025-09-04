@@ -1,15 +1,15 @@
-
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:rxGuardian/pages/verify_email_page.dart';
 
 import '../constants/RxGuardianLogo.dart';
 import '../constants/colors.dart';
 import '../constants/routes.dart';
-import '../services/auth/auth_methods.dart';
+import '../controllers/auth_controller.dart';
 import '../widgets/show_toast.dart';
 import 'login_page.dart';
-
 
 class SignupPage extends StatefulWidget {
   static String route_name = signup_route;
@@ -20,14 +20,25 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
+  // --- CONTROLLERS ---
+  final _nameController = TextEditingController();
+  final _dobController = TextEditingController(); // For Date of Birth
+  final _addressController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
+  final AuthController contr = Get.find();
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _dobController.dispose();
+    _addressController.dispose();
+    _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -94,6 +105,70 @@ class _SignupPageState extends State<SignupPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Name Field
+        TextFormField(
+          controller: _nameController,
+          keyboardType: TextInputType.name,
+          style: GoogleFonts.poppins(color: Colors.white),
+          decoration: _buildInputDecoration(
+            labelText: 'Full Name',
+            prefixIcon: Icons.person_outline,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Date of Birth Field
+        TextFormField(
+          controller: _dobController,
+          readOnly: true, // Prevents keyboard from appearing
+          style: GoogleFonts.poppins(color: Colors.white),
+          decoration: _buildInputDecoration(
+            labelText: 'Date of Birth',
+            prefixIcon: Icons.calendar_today_outlined,
+          ),
+          onTap: () async {
+            // Show date picker when the field is tapped
+            DateTime? pickedDate = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(1920),
+              lastDate: DateTime.now(),
+            );
+            if (pickedDate != null) {
+              // Format the date and set it to the controller
+              String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
+              setState(() {
+                _dobController.text = formattedDate;
+              });
+            }
+          },
+        ),
+        const SizedBox(height: 20),
+
+        // Address Field
+        TextFormField(
+          controller: _addressController,
+          keyboardType: TextInputType.streetAddress,
+          style: GoogleFonts.poppins(color: Colors.white),
+          decoration: _buildInputDecoration(
+            labelText: 'Address',
+            prefixIcon: Icons.home_outlined,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Phone Field
+        TextFormField(
+          controller: _phoneController,
+          keyboardType: TextInputType.phone,
+          style: GoogleFonts.poppins(color: Colors.white),
+          decoration: _buildInputDecoration(
+            labelText: 'Phone Number',
+            prefixIcon: Icons.phone_outlined,
+          ),
+        ),
+        const SizedBox(height: 20),
+
         // Email Field
         TextFormField(
           controller: _emailController,
@@ -105,6 +180,7 @@ class _SignupPageState extends State<SignupPage> {
           ),
         ),
         const SizedBox(height: 20),
+
         // Password Field
         TextFormField(
           controller: _passwordController,
@@ -125,6 +201,7 @@ class _SignupPageState extends State<SignupPage> {
           ),
         ),
         const SizedBox(height: 20),
+
         // Confirm Password Field
         TextFormField(
           controller: _confirmPasswordController,
@@ -145,6 +222,7 @@ class _SignupPageState extends State<SignupPage> {
           ),
         ),
         const SizedBox(height: 32),
+
         // Sign Up Button
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -156,16 +234,22 @@ class _SignupPageState extends State<SignupPage> {
             ),
           ),
           onPressed: () async {
-            if(_passwordController.text!=_confirmPasswordController.text){
-              showToast(context, "Password and confirm password must be same!", ToastType.WARNING);
+            if (_passwordController.text != _confirmPasswordController.text) {
+              showToast(context, "Passwords do not match!", ToastType.WARNING);
               return;
             }
-            if (await AuthMethods.signUp(
-                email: _emailController.text,
-                password: _passwordController.text,context: context)) {
-              if(mounted) {
-                Navigator.of(context)
-                    .pushNamed(VerifyEmailPage.route_name);
+            // Pass all the new data to the signUp method
+            if (await contr.signUp(
+              name: _nameController.text,
+              dob: _dobController.text,
+              address: _addressController.text,
+              phone: _phoneController.text,
+              email: _emailController.text,
+              password: _passwordController.text,
+              context: context,
+            )) {
+              if (mounted) {
+                Navigator.of(context).pushNamed(VerifyEmailPage.route_name);
               }
             }
           },
@@ -192,7 +276,6 @@ class _SignupPageState extends State<SignupPage> {
         ),
         TextButton(
           onPressed: () {
-            // Navigate to Login page
             Navigator.of(context).pushReplacementNamed(LoginPage.route_name);
           },
           child: Text(
@@ -235,5 +318,3 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 }
-
-

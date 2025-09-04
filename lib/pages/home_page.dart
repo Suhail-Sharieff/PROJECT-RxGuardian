@@ -1,6 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:rxGuardian/controllers/auth_controller.dart';
+import 'package:rxGuardian/models/pharmacist.dart';
+import 'package:rxGuardian/pages/landing_page.dart';
 import 'package:rxGuardian/pages/verify_email_page.dart';
 
 // Import your enhanced pages
@@ -45,50 +51,107 @@ class HomePage extends StatelessWidget {
         }
 
         // If user is logged in and verified, show the main home page content
-        return _HomePageContent(user: user);
+        return _HomePageContent();
       },
     );
   }
 }
+enum ProfileMenuAction { profile, logout }
 
 // The actual UI for the home page, separated for clarity
 class _HomePageContent extends StatelessWidget {
-  final User user;
-  const _HomePageContent({required this.user});
+  // We remove the constructor with the 'user' parameter.
+  // This widget should be self-contained and get its state from the controller.
+  _HomePageContent();
+
+  // Find the AuthController instance using GetX
+  final AuthController contr = Get.find<AuthController>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
-      backgroundColor: kBackgroundColor,
-      elevation: 0,
-      title: Text(
-        'RxGuardian',
-        style: GoogleFonts.poppins(
-          // Add this line to make the text visible
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
+        backgroundColor: kBackgroundColor,
+        elevation: 0,
+        title: Text(
+          'RxGuardian',
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ),leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: kSecondaryTextColor),
-        onPressed: () => Navigator.of(context).pop(),
+        // The back button is unconventional for a main dashboard.
+        // It's better to remove it to prevent confusing navigation loops.
+        // The user should explicitly log out to leave this screen.
+        automaticallyImplyLeading: false,
+        actions: [
+          // Obx widget to reactively display the user's name
+          Obx(() {
+            final user = contr.user.value;
+            // Only show the greeting if the user and their name are available
+            if (user != null && user.name != null && user.name!.isNotEmpty) {
+              final firstName = user.name!.split(' ').first;
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Text(
+                    'Hi, $firstName',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: kPrimaryColor, // Ensure text is visible
+                    ),
+                  ),
+                ),
+              );
+            }
+            // If there's no user, return an empty widget
+            return const SizedBox.shrink();
+          }),
+
+          // This button handles the profile icon and its dropdown menu
+          PopupMenuButton<ProfileMenuAction>(
+            icon: const Icon(Icons.account_circle, size: 28, color: Colors.white),
+            onSelected: (value) {
+              switch (value) {
+                case ProfileMenuAction.profile:
+                  Get.snackbar('Coming Soon!', 'Profile page is under development.');
+                  break;
+                case ProfileMenuAction.logout:
+                // Call the logout method from the controller
+                  contr.logout(context: context);
+                  break;
+              }
+            },
+            // This builds the list of items in the dropdown menu
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<ProfileMenuAction>>[
+              const PopupMenuItem<ProfileMenuAction>(
+                value: ProfileMenuAction.profile,
+                child: ListTile(
+                  leading: Icon(Icons.person_outline),
+                  title: Text('Profile'),
+                ),
+              ),
+              const PopupMenuItem<ProfileMenuAction>(
+                value: ProfileMenuAction.logout,
+                child: ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text('Logout'),
+                ),
+              ),
+            ], // CORRECTION: Closed the itemBuilder list properly
+          ),
+          const SizedBox(width: 8), // This now correctly sits within the actions list
+        ],
+      ), // CORRECTION: Closed the AppBar properly
+      // CORRECTION: The 'body' must be a direct property of the Scaffold, not inside the AppBar
+      body: const Center(
+        child: Text(
+          "Hello World",
+          style: TextStyle(color: Colors.white, fontSize: 24),
+        ),
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.logout_rounded, color: Colors.white70), // Also good to set icon color explicitly
-          tooltip: 'Logout',
-          onPressed: () async {
-            await FirebaseAuth.instance.signOut();
-          },
-        ),
-        const SizedBox(width: 8),
-      ],
-    ),
-      body:Center(child: Text("Hello Worild"),)
     );
   }
-
-
-
 }
