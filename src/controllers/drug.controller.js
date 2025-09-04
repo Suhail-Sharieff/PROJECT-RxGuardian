@@ -47,25 +47,5 @@ const getAllDrugDetails=asyncHandler(
         }
     }
 )
-//get analysus:
-/**SELECT 
-    m.name AS manufacturer_name,
-    d.type AS drug_type,
-    ROUND(AVG(d.selling_price), 2) AS avg_selling_price,
-    ROUND(AVG(((d.selling_price - d.cost_price) / d.cost_price) * 100), 2) AS avg_profit_percent,
 
-    ifnull(ROUND(SUM(si.quantity) / COUNT(DISTINCT DATE_FORMAT(s.date, '%Y-%m')), 2),0) AS avg_sold_per_month,
-    ifnull(ROUND(SUM(si.quantity) / COUNT(DISTINCT YEAR(s.date)), 2),0) AS avg_sold_per_year
-
-FROM drug AS d
-LEFT JOIN manufacturer AS m
-    ON d.manufacturer_id = m.manufacturer_id
-LEFT JOIN sale_item AS si
-    ON d.drug_id = si.drug_id
-LEFT JOIN sale AS s
-    ON si.sale_id = s.sale_id
-
-GROUP BY m.name, d.type
-ORDER BY d.type, m.name;
- */
 export {getAllDrugDetails}

@@ -1,6 +1,6 @@
 
-
-const createPhramacist = `
+const init_query=
+`
 CREATE TABLE pharmacist (
 id int primary key auto_increment ,
 name varchar(50) NOT NULL,
@@ -9,10 +9,9 @@ address varchar(100) NOT NULL,
 phone varchar(20) NOT NULL,
 password varchar(20) NOT NULL,
 email varchar(50) unique not null
-)`
-
-const createManufacturer=
-`create table manufacturer
+);
+--------------------------------------------------------------------
+create table manufacturer
 (
 manufacturer_id int primary key auto_increment,
 name varchar(50) not null,
@@ -21,9 +20,9 @@ phone varchar(50) not null,
 email varchar(50) unique not null,
 license varchar(50) not null,
 password varchar(50) not null
-)`
-
-const createShop=`CREATE TABLE shop (
+);
+-----------------------------------------------------------------------
+CREATE TABLE shop (
     shop_id INT PRIMARY KEY AUTO_INCREMENT,
     address VARCHAR(50) NOT NULL,
     phone VARCHAR(50) NOT NULL,
@@ -33,10 +32,9 @@ const createShop=`CREATE TABLE shop (
     established DATETIME DEFAULT NOW(),
     CONSTRAINT fk_manager FOREIGN KEY (manager_id) REFERENCES pharmacist(pharmacist_id) on delete set null
 );
-`
+-----------------------------------------------------------------------
 
-const drug_table=
-`create table drug
+create table drug
 (
 drug_id int primary key,
 type varchar(50)  not null,
@@ -56,7 +54,6 @@ on delete cascade
 )
 DELIMITER $$
 
--- Insert check
 CREATE TRIGGER trg_check_drug_validity
 BEFORE INSERT ON drug
 FOR EACH ROW
@@ -73,8 +70,6 @@ BEGIN
         SET MESSAGE_TEXT = 'Selling price cannot be less than cost price';
     END IF;
 END$$
-
--- Update check
 CREATE TRIGGER trg_check_drug_update
 BEFORE UPDATE ON drug
 FOR EACH ROW
@@ -89,21 +84,50 @@ BEGIN
         SET MESSAGE_TEXT = 'Selling price cannot be less than cost price';
     END IF;
 END$$
-
 DELIMITER ;
-`
 
-const sale=
-`create table sale (
+----------------------------------------------
+
+create table sale (
     sale_id INT primary key auto_increment,
     date datetime default NOW()
 );
 create table sale_item(
-sale_item int primary key auto_increment,
+sale_item_id int primary key auto_increment,
 sale_id int,
 drug_id int,
 quantity int not null,
 discount double not null,
 foreign key(sale_id) references sale(sale_id) on delete cascade,
 foreign key(drug_id) references drug(drug_id) on delete set null
-)`
+);
+
+-------------------------------------------------------
+
+create table employee(
+emp_id int primary key auto_increment,
+pharmacist_id int,
+shop_id int,
+constraint fk_pharmacist_id foreign key(pharmacist_id) references pharmacist(pharmacist_id) on delete cascade,
+constraint fk_working_shop_id foreign key(shop_id) references shop(shop_id) on delete set null
+);
+
+create table salary(
+salary_id int primary key auto_increment,
+salary double not null default 0,
+emp_id int not null,
+constraint foreign key(emp_id) references employee(emp_id) on delete cascade
+)
+
+
+
+
+
+
+
+
+
+
+
+
+`
