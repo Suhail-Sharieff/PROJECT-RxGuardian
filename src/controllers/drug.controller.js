@@ -29,11 +29,11 @@ const getAllDrugDetails=asyncHandler(
             d.selling_price,
             m.name AS manufacturer_company,
             m.address AS manufacturer_address
-        FROM drug AS d
-        LEFT JOIN manufacturer AS m
-            ON d.manufacturer_id = m.manufacturer_id
-        order by d.type
-        limit ${limit} offset ${offset}
+            FROM drug AS d
+            LEFT JOIN manufacturer AS m
+                ON d.manufacturer_id = m.manufacturer_id
+            order by d.type
+            limit ${limit} offset ${offset}
             `
             
             const [rows]=await db.execute(query);
