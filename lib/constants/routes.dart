@@ -1,6 +1,7 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:get/get_navigation/src/routes/get_route.dart';
+import 'package:rxGuardian/widgets/pharmacist_profile.dart';
 
 import '../pages/forgot_password_page.dart';
 import '../pages/home_page.dart';
@@ -15,6 +16,7 @@ const forgot_password_route='/forgotPassword';
 const signup_route='/signup/';
 const verify_email_route='/verifyEmail/';
 const home_route='/home/';
+const profile_route='/profile/';
 
 
 
@@ -30,5 +32,6 @@ class AppPages {
     GetPage(name: signup_route,page: () => const SignupPage(),),
     GetPage(name: verify_email_route,page: () => const VerifyEmailPage(),),
     GetPage(name: forgot_password_route, page: ()=>const ForgotPassWordPage()),
+    GetPage(name: profile_route, page: ()=>const PharmacistProfileScreen()),
   ];
 }

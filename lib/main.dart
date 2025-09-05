@@ -33,8 +33,8 @@ class MyApp extends StatelessWidget {
         title: 'RxGuardian',
         theme: ThemeData(
           textTheme: GoogleFonts.poppinsTextTheme().apply( // Using Poppins for a modern look
-            bodyColor: sc.darkMode.value ? kNormalTextColor : Colors.black,
-            displayColor: sc.darkMode.value ? kNormalTextColor : Colors.black,
+            bodyColor: sc.darkMode.value ? kPrimaryColor : Colors.black,
+            displayColor: sc.darkMode.value ? kPrimaryColor : Colors.black,
           ),
           colorScheme: ColorScheme.fromSeed(
             seedColor: kPrimaryColor, // Use your primary color for a consistent theme

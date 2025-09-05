@@ -224,8 +224,18 @@ class AuthController extends GetxController {
       showToast(context, "Failed to update password", ToastType.ERROR);
     }
   }
-  Pharmacist? getPharmacist(){
-    return user.value;
+  Future<Map<String,dynamic>> getCurrPharmacistProfile(BuildContext con)async{
+    try{
+      var url=Uri.http(main_uri,'/auth/getCurrPharmacistProfile');
+      var res=await http.get(url,headers:
+      {
+        'authorization': 'Bearer $accessToken'
+      });
+  log(res.body.toString());
+      return jsonDecode(res.body)['data'];
+    }catch(err){
+      throw Exception("Failed to fetch !${err.toString()}");
+    }
   }
 
 }
