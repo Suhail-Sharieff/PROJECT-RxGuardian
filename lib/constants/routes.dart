@@ -9,6 +9,7 @@ import '../pages/landing_page.dart';
 import '../pages/login_page.dart';
 import '../pages/signup_page.dart';
 import '../pages/verify_email_page.dart';
+import '../widgets/pharmacy_purchase_analysis.dart';
 
 const landing_route='/landing/';
 const login_route='/login';
@@ -17,6 +18,7 @@ const signup_route='/signup/';
 const verify_email_route='/verifyEmail/';
 const home_route='/home/';
 const profile_route='/profile/';
+const shop_purchase_analysis_route='/shopAnalysis/';
 
 
 
@@ -33,5 +35,6 @@ class AppPages {
     GetPage(name: verify_email_route,page: () => const VerifyEmailPage(),),
     GetPage(name: forgot_password_route, page: ()=>const ForgotPassWordPage()),
     GetPage(name: profile_route, page: ()=>const PharmacistProfileScreen()),
+    GetPage(name: shop_purchase_analysis_route, page: ()=>const ShopPurchaseAnalysisPage()),
   ];
 }

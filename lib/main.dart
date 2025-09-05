@@ -4,10 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:rxGuardian/constants/colors.dart';
 import 'package:rxGuardian/controllers/auth_controller.dart';
-import 'package:rxGuardian/pages/home_page.dart';
-import 'package:rxGuardian/pages/login_page.dart';
-import 'package:rxGuardian/pages/signup_page.dart';
-import 'package:rxGuardian/pages/verify_email_page.dart';
 import 'constants/routes.dart';
 import 'controllers/auth_wrapper.dart';
 import 'controllers/setting_controller.dart';
@@ -33,8 +29,8 @@ class MyApp extends StatelessWidget {
         title: 'RxGuardian',
         theme: ThemeData(
           textTheme: GoogleFonts.poppinsTextTheme().apply( // Using Poppins for a modern look
-            bodyColor: sc.darkMode.value ? kPrimaryColor : Colors.black,
-            displayColor: sc.darkMode.value ? kPrimaryColor : Colors.black,
+            bodyColor: sc.darkMode.value ? kNormalTextColor : Colors.black,
+            displayColor: sc.darkMode.value ? kNormalTextColor : Colors.black,
           ),
           colorScheme: ColorScheme.fromSeed(
             seedColor: kPrimaryColor, // Use your primary color for a consistent theme

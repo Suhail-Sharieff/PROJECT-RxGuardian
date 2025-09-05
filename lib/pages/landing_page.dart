@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/colors.dart';
 import '../constants/routes.dart';
+import '../widgets/feature_card.dart';
 import 'home_page.dart';
 
 class LandingPage extends StatelessWidget {
@@ -177,6 +178,7 @@ class LandingPage extends StatelessWidget {
                 icon: f["icon"] as IconData,
                 title: f["title"] as String,
                 description: f["desc"] as String,
+                onTap: (){},
               ),
             )
             .toList(),
@@ -227,86 +229,6 @@ class LandingPage extends StatelessWidget {
 
 // --- REUSABLE WIDGETS ---
 
-// A dedicated widget for feature cards to handle hover effects
-class FeatureCard extends StatefulWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-
-  const FeatureCard({
-    required this.icon,
-    required this.title,
-    required this.description,
-    super.key,
-  });
-
-  @override
-  State<FeatureCard> createState() => _FeatureCardState();
-}
-
-class _FeatureCardState extends State<FeatureCard> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 300,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: kCardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _isHovered ? kPrimaryColor : Colors.transparent,
-            width: 1.5,
-          ),
-          boxShadow: [
-            if (_isHovered)
-              BoxShadow(
-                color: kPrimaryColor.withOpacity(0.15),
-                blurRadius: 16,
-                spreadRadius: 4,
-              ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: kPrimaryColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(widget.icon, size: 32, color: kPrimaryColor),
-            ),
-            kVerticalSpaceMedium,
-            Text(
-              widget.title,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              widget.description,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                color: kSecondaryTextColor,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // A simple text link for the footer with a hover effect
 class _FooterLink extends StatefulWidget {

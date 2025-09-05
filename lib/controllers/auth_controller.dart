@@ -238,4 +238,18 @@ class AuthController extends GetxController {
     }
   }
 
+  Future<Map<String,dynamic>>getMyShopAnalysis(BuildContext context,int pgNumber)async{
+    try{
+      var url=Uri.http(main_uri,'/shop/getMyShopAnalysis',{'pgNo': pgNumber.toString()});
+      var res=await http.get(url,headers:
+      {
+        'authorization': 'Bearer $accessToken'
+      });
+      log(res.body.toString());
+      return jsonDecode(res.body)['data'];
+    }catch(err){
+      throw Exception("Failed to fetch !${err.toString()}");
+    }
+  }
+
 }
