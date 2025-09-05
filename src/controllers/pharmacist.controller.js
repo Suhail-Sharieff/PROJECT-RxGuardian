@@ -347,7 +347,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 const getCurrPharmacistProfile=asyncHandler(
   async(req,res)=>{
-      const {pharmacist_id}=req.pharmacist;
+      var {pharmacist_id}=req.pharmacist;
+      //if query is passed then that person must be choosed
+      if(req.query.pharmacist_id) pharmacist_id=req.query.pharmacist_id
       const query=`
       select e.emp_id,e.pharmacist_id,s.shop_id,p.name as pharmacist_name
       ,s.name as shop_name,x.name as manager_name,sal.salary,

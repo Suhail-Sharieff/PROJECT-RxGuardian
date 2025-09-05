@@ -155,6 +155,21 @@ BEGIN
     VALUES (0, NEW.emp_id);
 END;
 
+
+
+create table if not exists quantity(
+drug_id int,
+shop_id int,
+quantity int not null default 0,
+unique key(drug_id,shop_id),
+foreign key (drug_id) references drug(drug_id) on delete
+ cascade,
+ foreign key(shop_id) references shop(shop_id) on delete CASCADE
+);
+
+
+
+
 `;
 
 
