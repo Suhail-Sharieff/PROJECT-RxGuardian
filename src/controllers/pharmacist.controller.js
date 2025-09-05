@@ -324,7 +324,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             name: pharmacist.name,
         },
         process.env.ACCESS_TOKEN_SECRET, // Ensure this is the correct secret
-        { expiresIn: "1d" } // Set a new expiration for the access token
+        { expiresIn: process.env.ACCESS_TOKEN_EXPIRY } // Set a new expiration for the access token
     );
 
     // Remove sensitive data before sending back
@@ -345,7 +345,41 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     );
 });
 
+const getCurrPharmacistProfile=asyncHandler(
+  async(req,res)=>{
+      const {pharmacist_id}=req.pharmacist;
+      const query=`
+      select e.emp_id,e.pharmacist_id,s.shop_id,p.name as pharmacist_name
+      ,s.name as shop_name,x.name as manager_name,sal.salary,
+      case 
+      when e.pharmacist_id=s.manager_id then 'Manager'
+      when e.shop_id is not null then 'Employee'
+      else 'Not a part of any organization'
+      end as role 
+      from employee as e
+      left join pharmacist as p
+      on e.pharmacist_id=p.pharmacist_id
+      left join shop as s
+      on e.shop_id=s.shop_id
+      left join
+      pharmacist as x
+      on x.pharmacist_id=s.manager_id
+      left join salary as sal
+      on e.emp_id=sal.emp_id
+      where p.pharmacist_id= ? `
+
+    const [rows]=await db.execute(query,[pharmacist_id])
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        rows[0],
+        "Fetched data successfully!"
+      )
+    )
+
+  }
+)
 
 
-
-export { registerPharmacist, loginPharmacist, logoutPharmacist, updatePassword, updateName, getPharmacistById,refreshAccessToken}
+export { registerPharmacist, loginPharmacist, logoutPharmacist, updatePassword, updateName, getPharmacistById,refreshAccessToken,getCurrPharmacistProfile}
