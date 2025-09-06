@@ -18,7 +18,22 @@ class AuthController extends GetxController {
 
   final Rx<Pharmacist?> user = Rx<Pharmacist?>(null);
   String? accessToken;
-
+  Future<bool> verifyManagerAccess() async {
+    // We test access by trying to fetch the first page of a known manager-only route.
+    // A success (200) means access is granted. A failure (e.g., 403) means denied.
+    var url = Uri.http(main_uri, '/manager');
+    try {
+      var res = await http.get(url, headers: {
+        'authorization': 'Bearer $accessToken',
+      });
+      // If the server responds with OK, the user has manager access.
+      return res.statusCode == 200;
+    } catch (e) {
+      // Any network error or failure to connect implies no access.
+      print("Manager access check failed: $e");
+      return false;
+    }
+  }
   Future<bool> signUp({
     required String email,
     required String password,

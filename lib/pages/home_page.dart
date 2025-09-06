@@ -1,22 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:highlight/languages/http.dart';
+import 'package:http/http.dart';
 import 'package:rxGuardian/controllers/auth_controller.dart';
 import 'package:rxGuardian/pages/verify_email_page.dart';
 import 'package:rxGuardian/widgets/app_bar.dart';
 import 'package:rxGuardian/widgets/feature_card.dart';
-import 'package:rxGuardian/widgets/pharmacist_profile.dart';
-
-// Import your enhanced pages
-import '../constants/colors.dart';
+import 'package:rxGuardian/widgets/show_toast.dart';
 import '../constants/routes.dart';
 
 // Import pages to navigate to
 
 import '../controllers/setting_controller.dart';
+import '../network/network_constants.dart';
 import 'login_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -109,12 +106,17 @@ class _HomePageContent extends StatelessWidget {
             ),
             FeatureCard(
               icon: Icons.people_outline,
-              title: 'Staff Management',
+              title: 'Manager Console',
               description:
-                  'View employee roster and manage staff details (Manager only).',
-              onTap: () {
+                  'View employee roster and manage staff details',
+              onTap: () async{
                 // TODO: Navigate to Staff Management Page
-                // Navigator.of(context).pushNamed(staff_route);
+                var res=await contr.verifyManagerAccess();
+                if(res) {
+                  Navigator.of(context).pushNamed(manager_console_route);
+                } else {
+                  showToast(context, "You dont have access to this console only your manager does!", ToastType.WARNING);
+                }
               },
             ),
           ],
