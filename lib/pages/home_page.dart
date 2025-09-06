@@ -84,7 +84,7 @@ class _HomePageContent extends StatelessWidget {
                   'Manage drug stock, view expiry dates, and handle inventory.',
               onTap: () {
                 // TODO: Navigate to Inventory Page
-                // Navigator.of(context).pushNamed(inventory_route);
+                Navigator.of(context).pushNamed(drug_stock_details_route);
               },
             ),
             FeatureCard(

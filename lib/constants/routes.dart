@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get_navigation/src/routes/get_route.dart';
 import 'package:rxGuardian/widgets/pharmacist_profile.dart';
 
+import '../pages/drug_stock_details.dart';
 import '../pages/forgot_password_page.dart';
 import '../pages/home_page.dart';
 import '../pages/landing_page.dart';
@@ -19,7 +20,7 @@ const verify_email_route='/verifyEmail/';
 const home_route='/home/';
 const profile_route='/profile/';
 const shop_purchase_analysis_route='/shopAnalysis/';
-
+const drug_stock_details_route='/drugStockDetails';
 
 
 
@@ -36,5 +37,6 @@ class AppPages {
     GetPage(name: forgot_password_route, page: ()=>const ForgotPassWordPage()),
     GetPage(name: profile_route, page: ()=>const PharmacistProfileScreen()),
     GetPage(name: shop_purchase_analysis_route, page: ()=>const ShopPurchaseAnalysisPage()),
+    GetPage(name: drug_stock_details_route, page: ()=>const PharmacyDrugStockDetailsPage()),
   ];
 }
