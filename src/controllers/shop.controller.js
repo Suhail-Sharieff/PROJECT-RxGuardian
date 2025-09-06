@@ -2,6 +2,8 @@ import { ApiError } from "../Utils/Api_Error.utils.js";
 import { ApiResponse } from "../Utils/Api_Response.utils.js";
 import { asyncHandler } from "../Utils/asyncHandler.utils.js";
 import { db } from "../Utils/sql_connection.utils.js";
+import { buildPaginatedFilters } from "../Utils/paginated_query_builder.js";
+
 
 const getAllShopDetails=asyncHandler(
     async(req,res)=>{
@@ -56,30 +58,14 @@ const getMyShopAnalysis = asyncHandler(
         `getting shop analysis for shop_id ${myShopId} ie ${myShopName}........`
       );
   
-      // pagination
-      let { pgNo = 1, searchManufacturer = "", searchDrugType = "" } = req.query;
-      if (!pgNo && req.body.pgNo) pgNo = req.body.pgNo;
-      const page = parseInt(pgNo, 10);
-      if (isNaN(page) || page < 1) {
-        throw new ApiError(400, "Page number must be a positive integer.");
-      }
-      const limit = 10;
-      const offset = (page - 1) * limit;
-  
-      // filters
-      const filters = [];
-      const params = [myShopId]; // always first param
-  
-      if (searchManufacturer && searchManufacturer.trim() !== "") {
-        filters.push("LOWER(m.name) LIKE ?");
-        params.push(searchManufacturer.trim().toLowerCase() + "%");
-      }
-      if (searchDrugType && searchDrugType.trim() !== "") {
-        filters.push("LOWER(d.type) LIKE ?");
-        params.push(searchDrugType.trim().toLowerCase() + "%");
-      }
-  
-      const whereClause = filters.length ? `AND ${filters.join(" AND ")}` : "";
+       const { limit, offset, whereClause, params } = buildPaginatedFilters({
+              req,
+              baseParams: [myShopId],
+              allowedFilters: [
+                { key: "searchManufacturer", column: "m.name", type: "string" },
+                { key: "searchDrugType", column: "d.type", type: "string" },
+              ]
+      });
   
       const query = `
         SELECT 
@@ -124,6 +110,67 @@ const getMyShopAnalysis = asyncHandler(
         );
     }
   );
-  
 
-export{getAllShopDetails,getMyShopAnalysis}
+const getShopImWorkingIn=
+  async(req,res)=>{
+    try{
+      const {pharmacist_id}=req.pharmacist;
+      const query=`select e.shop_id from employee as e join pharmacist as p where e.pharmacist_id=? limit 1`
+      const [rows]=await db.execute(query,[pharmacist_id]);
+      if(rows.length===0) throw new ApiError(400,"You do not work anywhere!");
+      return rows[0].shop_id;
+    }catch(err){
+      throw new ApiError(400,"Failed to fetch shop you work in !")
+    }
+  }
+
+const getMyShopDrugStock=asyncHandler(
+  async(req,res)=>{
+    try{
+      const {pharmacist_id}=req.pharmacist;
+      const shop_id=await getShopImWorkingIn(req,res);
+      // console.log(`pharma id = ${pharmacist_id} shop_id=${shop_id}`);
+        const { limit, offset, whereClause, params } = buildPaginatedFilters({
+              req,
+              baseParams: [shop_id],
+              allowedFilters: [
+                { key: "searchManufacturer", column: "m.name", type: "string" },
+                { key: "searchDrugType", column: "d.type", type: "string" },
+                { key: "searchBarcodeType", column: "d.barcode", type: "string" }
+              ]
+      });
+      const query=`
+        select 
+        q.drug_id,
+        d.name as  drug_name,
+        d.type as drug_type,
+        d.barcode,
+        d.dose,
+        d.code,
+        d.selling_price as cost,
+        q.quantity as stock_remaining,
+        d.expiry_date,m.name as manufacturer,
+        case when q.quantity<20 then 'Very Low' else 'Available' end as 'stock_availability_status',
+        case when d.expiry_date<now() then 'Expired' else concat('Expires in ',datediff(d.expiry_date,d.production_date),' days') end as 'expiry_status'
+        from 
+        quantity as q  join  shop as s on s.shop_id=q.shop_id 
+        join 
+        drug as d on q.drug_id=d.drug_id
+        join manufacturer as m on d.manufacturer_id=m.manufacturer_id
+        where s.shop_id= ? ${whereClause}
+        order by q.drug_id,q.quantity
+        limit ${limit} offset ${offset}
+      `
+      const [rows]=await db.execute(query,params);
+      if(rows.length===0) throw new ApiError(400,"Reached end of data!")
+      return res.status(200).json(
+        new ApiResponse(200,rows,"Fetched drug stock successfully!")
+      )
+    }catch(err){
+      throw new ApiError(400,err.message);
+    }
+    
+  }
+)
+
+export{getAllShopDetails,getMyShopAnalysis,getShopImWorkingIn,getMyShopDrugStock}
