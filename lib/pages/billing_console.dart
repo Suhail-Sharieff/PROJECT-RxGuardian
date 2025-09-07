@@ -11,16 +11,22 @@ import '../network/network_constants.dart';
 
 // --- DATA MODELS ---
 
-/// Represents a drug found via the search API.
+/// Represents a drug found via the search API, now with more details.
 class DrugSearchResult {
   final int drugId;
-  final String name;
+  final String drugName;
+  final String drugType;
+  final String manufacturer;
+  final String expiryStatus;
   final num sellingPrice;
   final int stockRemaining;
 
   DrugSearchResult({
     required this.drugId,
-    required this.name,
+    required this.drugName,
+    required this.drugType,
+    required this.manufacturer,
+    required this.expiryStatus,
     required this.sellingPrice,
     required this.stockRemaining,
   });
@@ -28,8 +34,11 @@ class DrugSearchResult {
   factory DrugSearchResult.fromJson(Map<String, dynamic> json) {
     return DrugSearchResult(
       drugId: json['drug_id'],
-      name: json['name'],
-      sellingPrice: json['selling_price'],
+      drugName: json['drug_name'],
+      drugType: json['drug_type'],
+      manufacturer: json['manufacturer'],
+      expiryStatus: json['expiry_status'],
+      sellingPrice: json['selling_price'] ?? json['cost'] ?? 0,
       stockRemaining: json['stock_remaining'],
     );
   }
@@ -45,17 +54,17 @@ class CartItem {
       : quantity = quantity.obs,
         discount = discount.obs;
 
-  double get totalPrice => (drug.sellingPrice * quantity.value) - discount.value;
+  num get itemSubtotal => drug.sellingPrice * quantity.value;
+  double get totalItemPrice => itemSubtotal - discount.value;
 }
 
 // --- DATA CONTROLLER (API Logic) ---
 class BillingDataController extends GetxController {
   final authController = Get.find<AuthController>();
 
-  Future<List<dynamic>> searchDrugs(String searchTerm) async {
+  Future<List<dynamic>> searchDrugs(Map<String, String> queryParams) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/sale/searchDrug', {'search': searchTerm});
-
+    var url = Uri.http(main_uri, '/shop/getMyShopDrugStock', queryParams);
     try {
       var res = await http.get(url, headers: {'authorization': 'Bearer $accessToken'});
       if (res.statusCode == 200) {
@@ -97,56 +106,91 @@ class BillingUIController extends GetxController {
   var isSearching = false.obs;
   var cartItems = <CartItem>[].obs;
   Timer? _debounce;
-  final searchController = TextEditingController();
+
+  final nameSearchController = TextEditingController();
+  final manufacturerSearchController = TextEditingController();
+  final drugTypeSearchController = TextEditingController();
+  final barcodeSearchController = TextEditingController();
+
+  var finalDiscount = 0.0.obs;
+  // ADDED: GST Rate constant. Could be fetched from settings.
+  final double gstRate = 18.0; // Example: 18% GST
 
   // Computed properties for the bill summary
-  double get subtotal => cartItems.fold(0, (sum, item) => sum + (item.drug.sellingPrice * item.quantity.value));
-  double get totalDiscount => cartItems.fold(0, (sum, item) => sum + item.discount.value);
-  double get grandTotal => subtotal - totalDiscount;
+  double get subtotal => cartItems.fold(0, (sum, item) => sum + item.itemSubtotal);
+  double get totalItemDiscount => cartItems.fold(0, (sum, item) => sum + item.discount.value);
+  // ADDED: New computed properties for GST calculation
+  double get totalAfterItemDiscounts => subtotal - totalItemDiscount;
+  double get gstAmount => totalAfterItemDiscounts > 0 ? totalAfterItemDiscounts * (gstRate / 100) : 0;
+  // UPDATED: Grand total now includes GST
+  double get grandTotal => totalAfterItemDiscounts + gstAmount - finalDiscount.value;
+
+  @override
+  void onInit() {
+    super.onInit();
+    nameSearchController.addListener(_onSearchChanged);
+    manufacturerSearchController.addListener(_onSearchChanged);
+    drugTypeSearchController.addListener(_onSearchChanged);
+    barcodeSearchController.addListener(_onSearchChanged);
+  }
 
   @override
   void onClose() {
     _debounce?.cancel();
-    searchController.dispose();
+    nameSearchController.dispose();
+    manufacturerSearchController.dispose();
+    drugTypeSearchController.dispose();
+    barcodeSearchController.dispose();
     super.onClose();
   }
 
-  void onSearchChanged(String query) {
+  void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     isSearching.value = true;
-    _debounce = Timer(const Duration(milliseconds: 600), () async {
-      if (query.length < 2) {
+    _debounce = Timer(const Duration(milliseconds: 700), () async {
+      if (nameSearchController.text.isNotEmpty ||
+          manufacturerSearchController.text.isNotEmpty ||
+          drugTypeSearchController.text.isNotEmpty ||
+          barcodeSearchController.text.isNotEmpty) {
+        try {
+          final queryParams = {
+            if (nameSearchController.text.isNotEmpty) 'searchByName': nameSearchController.text,
+            if (manufacturerSearchController.text.isNotEmpty) 'searchManufacturer': manufacturerSearchController.text,
+            if (drugTypeSearchController.text.isNotEmpty) 'searchDrugType': drugTypeSearchController.text,
+            if (barcodeSearchController.text.isNotEmpty) 'searchBarcodeType': barcodeSearchController.text,
+          };
+
+          final data = await _dataController.searchDrugs(queryParams);
+          searchResults.value = data.map((item) => DrugSearchResult.fromJson(item)).toList();
+        } catch (e) {
+          Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''), backgroundColor: kErrorColor, colorText: Colors.white);
+        } finally {
+          isSearching.value = false;
+        }
+      } else {
         searchResults.clear();
-        isSearching.value = false;
-        return;
-      }
-      try {
-        final data = await _dataController.searchDrugs(query);
-        searchResults.value = data.map((item) => DrugSearchResult.fromJson(item)).toList();
-      } catch (e) {
-        Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''), backgroundColor: kErrorColor, colorText: Colors.white);
-      } finally {
         isSearching.value = false;
       }
     });
   }
 
   void addItemToCart(DrugSearchResult drug) {
-    // Check if item already exists in cart
     var existingItem = cartItems.firstWhereOrNull((item) => item.drug.drugId == drug.drugId);
     if (existingItem != null) {
-      // If it exists, just increment quantity
       existingItem.quantity.value++;
     } else {
-      // Otherwise, add new item
       cartItems.add(CartItem(drug: drug));
     }
-    searchController.clear();
     searchResults.clear();
+    nameSearchController.clear();
+    manufacturerSearchController.clear();
+    drugTypeSearchController.clear();
+    barcodeSearchController.clear();
   }
 
   void clearCart() {
     cartItems.clear();
+    finalDiscount.value = 0.0;
   }
 
   Future<void> finalizeSale() async {
@@ -155,10 +199,18 @@ class BillingUIController extends GetxController {
       return;
     }
     try {
-      final saleItems = cartItems.map((item) => {
-        'drug_id': item.drug.drugId,
-        'quantity': item.quantity.value,
-        'discount': item.discount.value
+      final double preFinalDiscountTotal = subtotal - totalItemDiscount;
+
+      final saleItems = cartItems.map((item) {
+        double proportionalDiscount = 0.0;
+        if (preFinalDiscountTotal > 0) {
+          proportionalDiscount = (item.totalItemPrice / preFinalDiscountTotal) * finalDiscount.value;
+        }
+        return {
+          'drug_id': item.drug.drugId,
+          'quantity': item.quantity.value,
+          'discount': item.discount.value + proportionalDiscount,
+        };
       }).toList();
 
       await _dataController.createSale(saleItems);
@@ -178,7 +230,7 @@ class BillingConsolePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(BillingUIController());
+    Get.put(BillingUIController());
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -189,13 +241,15 @@ class BillingConsolePage extends StatelessWidget {
         iconTheme: theme.iconTheme,
         title: Text('Billing Console', style: theme.textTheme.titleLarge),
       ),
-      body: Padding(
+      // UPDATED: Body is now wrapped in a SingleChildScrollView to prevent overflow
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             _DrugSearchSection(),
             const SizedBox(height: 16),
-            Expanded(child: _CurrentBillSection()),
+            // UPDATED: _CurrentBillSection is no longer wrapped in Expanded
+            _CurrentBillSection(),
             const SizedBox(height: 16),
             _BillSummarySection(),
           ],
@@ -212,33 +266,50 @@ class _DrugSearchSection extends StatelessWidget {
     final theme = Theme.of(context);
     return Column(
       children: [
-        TextField(
-          controller: controller.searchController,
-          onChanged: controller.onSearchChanged,
-          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
-          decoration: InputDecoration(
-            hintText: 'Search for drugs by name or barcode...',
-            hintStyle: TextStyle(color: theme.hintColor),
-            prefixIcon: const Icon(Icons.search, size: 20),
-            suffixIcon: Obx(() => controller.isSearching.value ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const SizedBox.shrink()),
-            filled: true,
-            fillColor: theme.dividerColor.withOpacity(0.1),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-          ),
+        _SearchField(
+            controller: controller.nameSearchController,
+            hintText: 'Search by Name...',
+            icon: Icons.abc
+        ),
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          title: Text('Advanced Filters', style: theme.textTheme.bodySmall),
+          children: [
+            const SizedBox(height: 8),
+            _SearchField(
+              controller: controller.manufacturerSearchController,
+              hintText: 'Filter by Manufacturer...',
+              icon: Icons.factory_outlined,
+            ),
+            const SizedBox(height: 8),
+            _SearchField(
+              controller: controller.drugTypeSearchController,
+              hintText: 'Filter by Drug Type...',
+              icon: Icons.category_outlined,
+            ),
+            const SizedBox(height: 8),
+            _SearchField(
+              controller: controller.barcodeSearchController,
+              hintText: 'Filter by Barcode...',
+              icon: Icons.qr_code_scanner_outlined,
+            ),
+          ],
         ),
         Obx(() {
           if (controller.searchResults.isNotEmpty) {
-            return SizedBox(
-              height: 200,
-              child: ListView.builder(
+            return Container(
+              decoration: BoxDecoration(
+                  color: theme.cardColor.withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [ BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4)) ]
+              ),
+              height: 250,
+              child: ListView.separated(
                 itemCount: controller.searchResults.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final drug = controller.searchResults[index];
-                  return ListTile(
-                    title: Text(drug.name, style: theme.textTheme.bodyMedium),
-                    subtitle: Text('Stock: ${drug.stockRemaining} | Price: ₹${drug.sellingPrice}', style: theme.textTheme.bodySmall),
-                    onTap: () => controller.addItemToCart(drug),
-                  );
+                  return _SearchResultCard(drug: drug);
                 },
               ),
             );
@@ -249,6 +320,102 @@ class _DrugSearchSection extends StatelessWidget {
     );
   }
 }
+
+class _SearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final IconData icon;
+  const _SearchField({required this.controller, required this.hintText, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return TextField(
+      controller: controller,
+      style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(color: theme.hintColor),
+        prefixIcon: Icon(icon, size: 20),
+        filled: true,
+        fillColor: theme.dividerColor.withOpacity(0.1),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      ),
+    );
+  }
+}
+
+class _SearchResultCard extends StatelessWidget {
+  final DrugSearchResult drug;
+  const _SearchResultCard({required this.drug});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final controller = Get.find<BillingUIController>();
+
+    return InkWell(
+      onTap: () => controller.addItemToCart(drug),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(drug.drugName, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                      Text(drug.manufacturer, style: theme.textTheme.bodySmall),
+                    ],
+                  ),
+                ),
+                Text('₹${drug.sellingPrice}', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: kPrimaryColor)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _InfoChip(label: 'Stock: ${drug.stockRemaining}', color: Colors.blueGrey),
+                const SizedBox(width: 8),
+                _InfoChip(label: drug.drugType, color: Colors.purple),
+                const SizedBox(width: 8),
+                Expanded(child: _InfoChip(label: drug.expiryStatus, color: Colors.orange)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _InfoChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 11),
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
 
 class _CurrentBillSection extends StatelessWidget {
   @override
@@ -279,20 +446,25 @@ class _CurrentBillSection extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
-          Expanded(
-            child: Obx(() {
-              if (controller.cartItems.isEmpty) {
-                return const Center(child: Text('No items added yet.'));
-              }
-              return ListView.builder(
-                itemCount: controller.cartItems.length,
-                itemBuilder: (context, index) {
-                  final item = controller.cartItems[index];
-                  return _CartItemTile(item: item);
-                },
+          // UPDATED: ListView is no longer in an Expanded widget
+          Obx(() {
+            if (controller.cartItems.isEmpty) {
+              return const SizedBox(
+                  height: 100, // Give it a minimum height when empty
+                  child: Center(child: Text('No items added yet.'))
               );
-            }),
-          ),
+            }
+            return ListView.builder(
+              // UPDATED: Added shrinkWrap and physics for nested scrolling
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.cartItems.length,
+              itemBuilder: (context, index) {
+                final item = controller.cartItems[index];
+                return _CartItemTile(item: item);
+              },
+            );
+          }),
         ],
       ),
     );
@@ -314,40 +486,38 @@ class _CartItemTile extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(item.drug.name,
+                child: Text(item.drug.drugName,
                     style: theme.textTheme.bodyLarge
                         ?.copyWith(fontWeight: FontWeight.w600)),
               ),
-              Obx(() => Text('₹${item.totalPrice.toStringAsFixed(2)}', style: theme.textTheme.bodyLarge)),
+              Obx(() => Text('₹${item.totalItemPrice.toStringAsFixed(2)}', style: theme.textTheme.bodyLarge)),
               IconButton(onPressed: () => Get.find<BillingUIController>().cartItems.remove(item), icon: const Icon(Icons.close, size: 18, color: kErrorColor))
             ],
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              // Quantity Control
               const Text('Qty:'),
               SizedBox(
-                width: 30,
+                width: 40,
                 child: Obx(() => TextField(
                   controller: TextEditingController(text: item.quantity.value.toString()),
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.number,
                   onChanged: (val) => item.quantity.value = int.tryParse(val) ?? 1,
-                  decoration: const InputDecoration(border: InputBorder.none),
+                  decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
                 )),
               ),
               const SizedBox(width: 16),
-              // Discount Control
               const Text('Discount (₹):'),
               SizedBox(
-                width: 50,
+                width: 60,
                 child: Obx(() => TextField(
                   controller: TextEditingController(text: item.discount.value.toString()),
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.number,
                   onChanged: (val) => item.discount.value = double.tryParse(val) ?? 0.0,
-                  decoration: const InputDecoration(border: InputBorder.none),
+                  decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
                 )),
               )
             ],
@@ -359,16 +529,59 @@ class _CartItemTile extends StatelessWidget {
 }
 
 class _BillSummarySection extends StatelessWidget {
+  void _showFinalDiscountDialog(BuildContext context, BillingUIController controller) {
+    final discountController = TextEditingController(text: controller.finalDiscount.value > 0 ? controller.finalDiscount.value.toString() : '');
+    showDialog(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
+          backgroundColor: theme.cardColor,
+          title: Text('Apply Final Discount', style: theme.textTheme.titleLarge),
+          content: TextField(
+            controller: discountController,
+            keyboardType: TextInputType.number,
+            style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+            decoration: InputDecoration(
+              labelText: 'Discount Amount (₹)',
+              labelStyle: TextStyle(color: theme.hintColor),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                controller.finalDiscount.value = double.tryParse(discountController.text) ?? 0.0;
+                Navigator.of(context).pop();
+              },
+              child: const Text('Apply'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<BillingUIController>();
-    final theme = Theme.of(context);
     return Column(
       children: [
         Obx(() => Column(
           children: [
             _SummaryRow(label: 'Subtotal', value: '₹${controller.subtotal.toStringAsFixed(2)}'),
-            _SummaryRow(label: 'Total Discount', value: '- ₹${controller.totalDiscount.toStringAsFixed(2)}'),
+            _SummaryRow(label: 'Item Discounts', value: '- ₹${controller.totalItemDiscount.toStringAsFixed(2)}'),
+            // ADDED: Row to display GST amount
+            _SummaryRow(label: 'GST (${controller.gstRate}%)', value: '+ ₹${controller.gstAmount.toStringAsFixed(2)}'),
+            _SummaryRow(
+              label: 'Final Discount',
+              value: '- ₹${controller.finalDiscount.value.toStringAsFixed(2)}',
+              onTap: () => _showFinalDiscountDialog(context, controller),
+            ),
             const Divider(),
             _SummaryRow(label: 'Grand Total', value: '₹${controller.grandTotal.toStringAsFixed(2)}', isTotal: true),
           ],
@@ -394,8 +607,9 @@ class _SummaryRow extends StatelessWidget {
   final String label;
   final String value;
   final bool isTotal;
+  final VoidCallback? onTap;
 
-  const _SummaryRow({required this.label, required this.value, this.isTotal = false});
+  const _SummaryRow({required this.label, required this.value, this.isTotal = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -408,10 +622,21 @@ class _SummaryRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: style),
+          Row(
+            children: [
+              Text(label, style: style),
+              if (onTap != null)
+                IconButton(
+                  icon: const Icon(Icons.add_circle_outline, size: 16, color: kPrimaryColor),
+                  onPressed: onTap,
+                  tooltip: 'Add/Edit Discount',
+                )
+            ],
+          ),
           Text(value, style: style),
         ],
       ),
     );
   }
 }
+
