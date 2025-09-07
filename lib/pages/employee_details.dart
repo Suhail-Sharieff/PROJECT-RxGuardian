@@ -11,7 +11,6 @@ import '../network/network_constants.dart';
 
 // --- DATA MODEL ---
 class PharmacistEmployee {
-  final int empId;
   final int pharmacistId;
   final String pharmacistName;
   final String pharmacistAddress;
@@ -22,7 +21,6 @@ class PharmacistEmployee {
   final int nSalesMade;
 
   PharmacistEmployee({
-    required this.empId,
     required this.pharmacistId,
     required this.pharmacistName,
     required this.pharmacistAddress,
@@ -36,7 +34,6 @@ class PharmacistEmployee {
   // A method to create a copy with a new salary
   PharmacistEmployee copyWith({num? newSalary}) {
     return PharmacistEmployee(
-      empId: empId,
       pharmacistId: pharmacistId,
       pharmacistName: pharmacistName,
       pharmacistAddress: pharmacistAddress,
@@ -50,7 +47,6 @@ class PharmacistEmployee {
 
   factory PharmacistEmployee.fromJson(Map<String, dynamic> json) {
     return PharmacistEmployee(
-      empId: json['emp_id'],
       pharmacistId: json['pharmacist_id'],
       pharmacistName: json['pharmacist_name'],
       pharmacistAddress: json['pharmacist_address'],
@@ -91,7 +87,7 @@ class EmployeeDataController extends GetxController {
   }
 
   // ADDED: API call to update salary
-  Future<void> updateEmployeeSalary(int empId, num newSalary) async {
+  Future<void> updateEmployeeSalary(int pharmacistId, num newSalary) async {
     final accessToken = authController.accessToken;
     var url = Uri.http(main_uri, '/manager/updateEmployeeSalary');
     try {
@@ -101,7 +97,7 @@ class EmployeeDataController extends GetxController {
           'authorization': 'Bearer $accessToken',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'empId': empId, 'newSalary': newSalary}),
+        body: jsonEncode({'pharmacist_id': pharmacistId, 'newSalary': newSalary}),
       );
       if (res.statusCode != 200) {
         final errorBody = jsonDecode(res.body);
@@ -114,9 +110,9 @@ class EmployeeDataController extends GetxController {
   }
 
   // ADDED: API call to remove an employee
-  Future<void> removeEmployee(int empId) async {
+  Future<void> removeEmployee(int pharmacistId) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/manager/removeEmployee/$empId');
+    var url = Uri.http(main_uri, '/manager/removeEmployee/$pharmacistId');
     try {
       var res = await http.delete(
         url,
@@ -236,10 +232,10 @@ class EmployeeUIController extends GetxController {
     });
   }
 
-  Future<void> handleUpdateSalary(int empId, num newSalary) async {
+  Future<void> handleUpdateSalary(int pharmacistId, num newSalary) async {
     try {
-      await _dataController.updateEmployeeSalary(empId, newSalary);
-      int index = employeeList.indexWhere((e) => e.empId == empId);
+      await _dataController.updateEmployeeSalary(pharmacistId, newSalary);
+      int index = employeeList.indexWhere((e) => e.pharmacistId == pharmacistId);
       if (index != -1) {
         employeeList[index] = employeeList[index].copyWith(newSalary: newSalary);
       }
@@ -259,10 +255,10 @@ class EmployeeUIController extends GetxController {
     }
   }
 
-  Future<void> handleRemoveEmployee(int empId) async {
+  Future<void> handleRemoveEmployee(int pharmacistId) async {
     try {
-      await _dataController.removeEmployee(empId);
-      employeeList.removeWhere((e) => e.empId == empId);
+      await _dataController.removeEmployee(pharmacistId);
+      employeeList.removeWhere((e) => e.pharmacistId == pharmacistId);
       Get.snackbar(
         'Success',
         "Employee removed successfully!",
@@ -435,7 +431,7 @@ class _EmployeeCard extends StatelessWidget {
               onPressed: () async {
                 final newSalary = num.tryParse(salaryController.text);
                 if (newSalary != null) {
-                  await controller.handleUpdateSalary(employee.empId, newSalary);
+                  await controller.handleUpdateSalary(employee.pharmacistId, newSalary);
                   if (context.mounted) Navigator.of(context).pop();
                 } else {
                   Get.snackbar(
@@ -473,7 +469,7 @@ class _EmployeeCard extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: kErrorColor),
               onPressed: () async {
-                await controller.handleRemoveEmployee(employee.empId);
+                await controller.handleRemoveEmployee(employee.pharmacistId);
                 if (context.mounted) Navigator.of(context).pop();
               },
               child: const Text('Remove'),
