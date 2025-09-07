@@ -2,8 +2,10 @@
 import 'package:get/get_navigation/src/routes/get_route.dart';
 import 'package:rxGuardian/widgets/pharmacist_profile.dart';
 
+import '../pages/billing_console.dart';
 import '../pages/drug_stock_details.dart';
 import '../pages/forgot_password_page.dart';
+import '../pages/hiring_console.dart';
 import '../pages/home_page.dart';
 import '../pages/landing_page.dart';
 import '../pages/login_page.dart';
@@ -24,8 +26,8 @@ const shop_purchase_analysis_route='/shopAnalysis/';
 const drug_stock_details_route='/drugStockDetails/';
 const manager_console_route='/managerConsole/';
 const employee_details_route='/employeeDetails/';
-
-
+const hiring_console_route='/hiringConsole/';
+const billing_console_route='/billingConsole/';
 
 
 
@@ -42,5 +44,7 @@ class AppPages {
     GetPage(name: drug_stock_details_route, page: ()=>const PharmacyDrugStockDetailsPage()),
     GetPage(name: employee_details_route, page: ()=>const EmployeeDetailPage()),
     GetPage(name: manager_console_route, page: ()=>const ManagerConsolePage()),
+    GetPage(name: hiring_console_route, page: ()=>const HiringConsolePage()),
+    GetPage(name: billing_console_route, page: ()=>const BillingConsolePage()),
   ];
 }

@@ -86,12 +86,12 @@ class _HomePageContent extends StatelessWidget {
             ),
             FeatureCard(
               icon: Icons.point_of_sale_outlined,
-              title: 'Billing (POS)',
+              title: 'Billing Console',
               description:
                   'Process customer sales, generate invoices, and manage transactions.',
               onTap: () {
                 // TODO: Navigate to Billing/POS Page
-                // Navigator.of(context).pushNamed(billing_route);
+                Navigator.of(context).pushNamed(billing_console_route);
               },
             ),
             FeatureCard(

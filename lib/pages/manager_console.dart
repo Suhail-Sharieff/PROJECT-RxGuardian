@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:rxGuardian/constants/routes.dart';
+import 'package:rxGuardian/pages/hiring_console.dart';
 
 import '../widgets/feature_card.dart';
 import 'employee_details.dart';
@@ -43,12 +44,12 @@ class ManagerConsolePage extends StatelessWidget {
             // Placeholder for another manager feature
             FeatureCard(
               icon: Icons.analytics_outlined,
-              title: 'Shop Analysis',
+              title: 'Hire Pharmacists',
               description:
-              'Analyze sales, profits, and performance by manufacturer.',
+              'Hire talent pool in community across world',
               onTap: () {
                 // TODO: Navigate to Shop Analysis Page
-                // Navigator.of(context).pushNamed(ShopAnalysisPage.route_name);
+                Navigator.of(context).pushNamed(HiringConsolePage.route_name);
               },
             ),
             // Placeholder for another manager feature
