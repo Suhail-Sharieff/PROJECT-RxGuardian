@@ -136,9 +136,12 @@ const getMyShopDrugStock=asyncHandler(
               allowedFilters: [
                 { key: "searchManufacturer", column: "m.name", type: "string" },
                 { key: "searchDrugType", column: "d.type", type: "string" },
-                { key: "searchBarcodeType", column: "d.barcode", type: "string" }
+                { key: "searchBarcodeType", column: "d.barcode", type: "string" },
+                { key: "searchByName", column: "d.name", type: "string" },
               ]
       });
+      // console.log(params);
+      
       const query=`
         select 
         q.drug_id,
