@@ -94,6 +94,15 @@ const updateEmployeeSalary=asyncHandler(
 );
 const getAllEmployables=asyncHandler(
     async(req,res)=>{
+        const { limit, offset, whereClause, params } = buildPaginatedFilters({
+                        req,
+                        baseParams: [],
+                        allowedFilters: [
+                            { key: "searchPharmacistByName", column: "p.name", type: "string" },
+                            { key: "searchPharmacistById", column: "p.pharmacist_id", type: "number" },
+                            { key: "searchPharmacistByEmail", column: "p.email", type: "string" }
+                        ]
+                });
         const query=
         `select p.pharmacist_id,p.name,p.email,
         s.salary as prev_salary,
@@ -105,11 +114,13 @@ const getAllEmployables=asyncHandler(
         left join pharmacist as p 
         on e.pharmacist_id=p.pharmacist_id
         left join salary as s on s.emp_id=e.emp_id
-        where e.shop_id is null
+        where e.shop_id is null ${whereClause}
+        limit ${limit} offset ${offset}
 `
-        const [rows]=await db.execute(query);
+        const [rows]=await db.execute(query,params);
         if(rows.length==0) throw new ApiError(400,"No employables right now!")
-
+        
+        return res.status(200).json(new ApiResponse(200,rows))
     }
 )
 const addEmployee=asyncHandler(
@@ -131,5 +142,19 @@ const addEmployee=asyncHandler(
         
     }
 )
+const hirePharmacist=asyncHandler(
+    async(req,res)=>{
+        const {pharmacist_id}=req.body;
+        const shop_id=req.shop_id;//via middleare
+        const query=`update  employee
+                    set shop_id=?
+                    where pharmacist_id=?`
+        const [rows]=await db.execute(query,[shop_id,pharmacist_id]);
 
-export {isManager,getEmployeeDetails,removeEmployee,updateEmployeeSalary,addEmployee}
+        if(rows.length===0) throw new ApiError(400,"Failed to hire !")
+        return res.status(200).json(new ApiResponse(200,rows,`hired pharmacist_id=${pharmacist_id} in shopId=${shop_id}`))
+
+    }
+)
+
+export {isManager,getEmployeeDetails,removeEmployee,updateEmployeeSalary,addEmployee,getAllEmployables,hirePharmacist}
