@@ -97,12 +97,15 @@ const getOverallSales=asyncHandler(
       sa.discount,
       sum(d.selling_price*si.quantity)-sa.discount as grand_total,
       p.pharmacist_id ,
-      p.name as sold_by,sa.date as sold_on from sale as sa
+      p.name as sold_by,
+      c.name as customer_name,c.phone as customer_phone,
+      sa.date as sold_on from sale as sa
       left join sale_item as si
       on sa.sale_id=si.sale_id
       left join pharmacist as p on p.pharmacist_id=sa.pharmacist_id
       left join shop as sh on sa.shop_id=sh.shop_id
       left join drug as d on si.drug_id=d.drug_id
+      left join customer as c on c.customer_id=sa.customer_id
       group by sa.sale_id
       having sa.shop_id=? ${whereClause}
       order by sa.date desc
@@ -127,11 +130,12 @@ const getDetailsOfSale=asyncHandler(
       if(!sale_id) throw new ApiError(400,'sale_id is missing!')
     const query=
     `select d.drug_id,d.name,d.selling_price,si.quantity,p.pharmacist_id,p.name
-    as sold_by from
+    as sold_by,c.name as customer_name,c.phone as customer_phone  from
     sale as sa
     left join sale_item as si on si.sale_id=sa.sale_id
     left join drug as d on si.drug_id=d.drug_id
     left join pharmacist as p on sa.pharmacist_id=p.pharmacist_id
+    left join customer as c on sa.customer_id=c.customer_id
     where sa.sale_id=?`
     const [rows]=await db.execute(query,[sale_id])
     return res.status(200).json(new ApiResponse(200,rows));
