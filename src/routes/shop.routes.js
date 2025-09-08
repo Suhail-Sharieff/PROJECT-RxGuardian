@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyJWT } from "../middleware/auth.middleware.js";
-import { getAllShopDetails, getMyShopAnalysis, getMyShopDrugStock, getShopImWorkingIn, registerShopAndBecomeManager } from "../controllers/shop.controller.js";
+import { getAllShopDetails, getMyShopAnalysis, getMyShopDrugStock, getShopImWorkingIn, getShopNameImWorkingIn, registerShopAndBecomeManager } from "../controllers/shop.controller.js";
 
 
 const shopRouter=Router()
@@ -22,7 +22,7 @@ shopRouter
 
 shopRouter
 .route('/getShopName')
-.get(getShopImWorkingIn)
+.get(getShopNameImWorkingIn)
 
 shopRouter
 .route('/registerShop')

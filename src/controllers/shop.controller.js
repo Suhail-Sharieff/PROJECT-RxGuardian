@@ -118,9 +118,22 @@ const getShopImWorkingIn=
       const query=`select e.shop_id from employee as e join pharmacist as p where e.pharmacist_id=? limit 1`
       const [rows]=await db.execute(query,[pharmacist_id]);
       if(rows.length===0) throw new ApiError(400,"You do not work anywhere!");
+      // console.log(rows);
+      
       return rows[0].shop_id;
     }catch(err){
       throw new ApiError(400,"Failed to fetch shop you work in !")
+    }
+  }
+const getShopNameImWorkingIn=
+  async(req,res)=>{
+    try{
+      const shop_id=await getShopImWorkingIn(req,res);
+      // console.log(shop_id);
+      const [rows]=await db.execute(`select name from shop where shop_id=?`,[shop_id]);
+      return res.status(200).json(new ApiResponse(200,rows[0].name))
+    }catch(err){
+      throw new ApiError(400,`Failed to fetch shop you work in ${err.message}!`)
     }
   }
 
@@ -195,4 +208,4 @@ const getMyShopDrugStock=asyncHandler(
     }
  )
 
-export{getAllShopDetails,getMyShopAnalysis,getShopImWorkingIn,getMyShopDrugStock,registerShopAndBecomeManager}
+export{getAllShopDetails,getMyShopAnalysis,getShopImWorkingIn,getMyShopDrugStock,registerShopAndBecomeManager,getShopNameImWorkingIn}

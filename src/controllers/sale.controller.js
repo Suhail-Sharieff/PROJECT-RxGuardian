@@ -10,12 +10,13 @@ const initSale = asyncHandler(async (req, res) => {
   const { pharmacist_id } = req.pharmacist;
   const shop_id = await getShopImWorkingIn(req, res);
 
-  const { items, discount = 0 } = req.body;
+  const { items, discount = 0,customer_id } = req.body;
 
   if (!Array.isArray(items) || items.length === 0) {
     throw new ApiError(400, "Provide items array with { drug_id, quantity }");
   }
 
+  if(!customer_id) throw new ApiError(400,"Please provide customer id")
 
 
   for (const it of items) {
@@ -35,8 +36,8 @@ const initSale = asyncHandler(async (req, res) => {
   try {
 
     const [saleResult] = await db.execute(
-      "INSERT INTO sale (shop_id, pharmacist_id, discount) VALUES (?, ?, ?)",
-      [shop_id, pharmacist_id, discount]
+      "INSERT INTO sale (shop_id, pharmacist_id, discount,customer_id) VALUES (?, ?, ?,?)",
+      [shop_id, pharmacist_id, discount,customer_id]
     );
     const sale_id = saleResult.insertId;
     if (!sale_id) throw new ApiError(500, "Failed to create sale");
