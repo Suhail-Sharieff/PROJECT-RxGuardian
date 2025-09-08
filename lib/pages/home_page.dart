@@ -96,12 +96,12 @@ class _HomePageContent extends StatelessWidget {
             ),
             FeatureCard(
               icon: Icons.analytics_outlined,
-              title: 'Pharmacy Purchase Analysis',
+              title: 'Pharmacy Sales Details',
               description:
-                  'View sales reports with manufacturers , track revenue, and analyze performance.',
+                  'View sales reports with track revenue',
               onTap: () {
                 // TODO: Navigate to Analytics Page
-                Navigator.of(context).pushNamed(shop_purchase_analysis_route);
+                Navigator.of(context).pushNamed(sale_details_route);
               },
             ),
             FeatureCard(

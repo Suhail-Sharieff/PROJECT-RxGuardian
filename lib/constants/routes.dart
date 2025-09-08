@@ -10,6 +10,7 @@ import '../pages/home_page.dart';
 import '../pages/landing_page.dart';
 import '../pages/login_page.dart';
 import '../pages/manager_console.dart';
+import '../pages/shop_sale_details.dart';
 import '../pages/signup_page.dart';
 import '../pages/verify_email_page.dart';
 import '../pages/employee_details.dart';
@@ -22,13 +23,14 @@ const signup_route='/signup/';
 const verify_email_route='/verifyEmail/';
 const home_route='/home/';
 const profile_route='/profile/';
+
 const shop_purchase_analysis_route='/shopAnalysis/';
 const drug_stock_details_route='/drugStockDetails/';
 const manager_console_route='/managerConsole/';
 const employee_details_route='/employeeDetails/';
 const hiring_console_route='/hiringConsole/';
 const billing_console_route='/billingConsole/';
-
+const sale_details_route='/saleDetails/';
 
 
 class AppPages {
@@ -46,5 +48,6 @@ class AppPages {
     GetPage(name: manager_console_route, page: ()=>const ManagerConsolePage()),
     GetPage(name: hiring_console_route, page: ()=>const HiringConsolePage()),
     GetPage(name: billing_console_route, page: ()=>const BillingConsolePage()),
+    GetPage(name: sale_details_route, page: ()=>const ShopSaleDetailsPage()),
   ];
 }

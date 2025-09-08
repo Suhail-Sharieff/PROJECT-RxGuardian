@@ -55,10 +55,11 @@ class ManagerConsolePage extends StatelessWidget {
             // Placeholder for another manager feature
             FeatureCard(
               icon: Icons.receipt_long_outlined,
-              title: 'Sales Reports',
-              description: 'Generate and view detailed sales and revenue reports.',
+              title: 'Pharmacy Purchases',
+              description: 'Generate and view detailed stock purchase reports.',
               onTap: () {
                 // TODO: Navigate to Sales Reports Page
+                Navigator.of(context).pushNamed(shop_purchase_analysis_route);
               },
             ),
             // Placeholder for another manager feature
