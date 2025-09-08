@@ -5,10 +5,10 @@ import 'package:rxGuardian/constants/routes.dart';
 import 'package:rxGuardian/controllers/auth_controller.dart';
 import 'package:rxGuardian/widgets/show_toast.dart';
 
-import '../constants/colors.dart'; // Assuming this contains your color constants
+import '../constants/colors.dart';
+import '../pages/shop_registeration.dart'; // Assuming this contains your color constants
 
 // --- DATA MODEL ---
-// This model represents the structure of the pharmacist's profile data.
 class PharmacistProfile {
   final int empId;
   final int pharmacistId;
@@ -30,7 +30,6 @@ class PharmacistProfile {
     required this.role,
   });
 
-  // Factory constructor to create a PharmacistProfile instance from a JSON map.
   factory PharmacistProfile.fromJson(Map<String, dynamic> json) {
     return PharmacistProfile(
       empId: json['emp_id'],
@@ -44,7 +43,6 @@ class PharmacistProfile {
     );
   }
 
-  // Helper getter to extract initials from the full name for the avatar.
   String get initials {
     if (pharmacistName.isEmpty) return '?';
     List<String> parts = pharmacistName.split(' ');
@@ -57,7 +55,6 @@ class PharmacistProfile {
 }
 
 // --- UI WIDGET ---
-// Converted to a StatefulWidget to handle the asynchronous data fetching lifecycle.
 class PharmacistProfileScreen extends StatefulWidget {
   const PharmacistProfileScreen({super.key});
   static const route_name = profile_route;
@@ -99,14 +96,15 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
-        title: Text('Pharmacist Profile',
-            style: GoogleFonts.poppins()),
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.cardColor,
+        title: Text('Pharmacist Profile', style: GoogleFonts.poppins()),
         centerTitle: true,
-        iconTheme: const IconThemeData(
-        ),
+        iconTheme: theme.iconTheme,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: kPrimaryColor))
@@ -123,8 +121,9 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
             constraints: const BoxConstraints(maxWidth: 500),
             child: Container(
               decoration: BoxDecoration(
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: kInputBorderColor),
+                border: Border.all(color: theme.dividerColor),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -135,9 +134,14 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
                     const SizedBox(height: 16),
                     _buildStatusChip(),
                     const SizedBox(height: 24),
-                    const Divider(height: 1, color: kInputBorderColor),
+                    Divider(height: 1, color: theme.dividerColor),
                     const SizedBox(height: 24),
                     _buildInfoSection(context),
+                    // UPDATED: Conditionally show the "Become a Manager" button
+                    if (_profile!.role.toLowerCase() != 'manager') ...[
+                      const SizedBox(height: 32),
+                      _buildBecomeManagerButton(context),
+                    ]
                   ],
                 ),
               ),
@@ -149,6 +153,7 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
   }
 
   Widget _buildProfileHeader() {
+    final theme = Theme.of(context);
     return Column(
       children: [
         CircleAvatar(
@@ -158,7 +163,6 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
             style: TextStyle(
               fontSize: 40,
               fontWeight: FontWeight.bold,
-              color: kPrimaryColor,
             ),
           ),
         ),
@@ -168,6 +172,7 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
           style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.bold,
+            color: theme.textTheme.titleLarge?.color,
           ),
           textAlign: TextAlign.center,
         ),
@@ -177,19 +182,21 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
 
   Widget _buildStatusChip() {
     bool isEmployed = _profile!.shopName != null;
+    final color = isEmployed ? kPrimaryColor : kWarningColor;
     return Chip(
       label: Text(
         _profile!.role,
         style: GoogleFonts.poppins(
-          color: isEmployed ? kPrimaryColor : kWarningColor,
+          color: color,
           fontWeight: FontWeight.w600,
         ),
       ),
+      backgroundColor: color.withOpacity(0.1),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
-          color: isEmployed ? kPrimaryColor : kWarningColor,
+          color: color,
           width: 1,
         ),
       ),
@@ -235,12 +242,13 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
 
   Widget _buildInfoRow(BuildContext context,
       {required IconData icon, required String label, required String value}) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 24),
+          Icon(icon, size: 24, color: theme.iconTheme.color),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -250,6 +258,7 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
                   label,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
+                    color: theme.textTheme.bodySmall?.color,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -258,6 +267,7 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    color: theme.textTheme.bodyLarge?.color,
                   ),
                 ),
               ],
@@ -267,5 +277,23 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
       ),
     );
   }
-}
 
+  // NEW WIDGET: Button to navigate to the shop registration page.
+  Widget _buildBecomeManagerButton(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: () {
+        // Navigate to the ShopRegistrationPage
+        Navigator.of(context).pushNamed(ShopRegistrationPage.route_name);
+      },
+      icon: const Icon(Icons.add_business_outlined),
+      label: const Text('Become a Manager / Register Shop'),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+}

@@ -10,6 +10,7 @@ import '../pages/home_page.dart';
 import '../pages/landing_page.dart';
 import '../pages/login_page.dart';
 import '../pages/manager_console.dart';
+import '../pages/shop_registeration.dart';
 import '../pages/shop_sale_details.dart';
 import '../pages/signup_page.dart';
 import '../pages/verify_email_page.dart';
@@ -31,6 +32,7 @@ const employee_details_route='/employeeDetails/';
 const hiring_console_route='/hiringConsole/';
 const billing_console_route='/billingConsole/';
 const sale_details_route='/saleDetails/';
+const shop_registration_route='/registerForShop/';
 
 
 class AppPages {
@@ -49,5 +51,7 @@ class AppPages {
     GetPage(name: hiring_console_route, page: ()=>const HiringConsolePage()),
     GetPage(name: billing_console_route, page: ()=>const BillingConsolePage()),
     GetPage(name: sale_details_route, page: ()=>const ShopSaleDetailsPage()),
+    GetPage(name: shop_registration_route, page: ()=>const ShopRegistrationPage()),
+
   ];
 }
