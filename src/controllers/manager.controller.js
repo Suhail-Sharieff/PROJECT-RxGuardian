@@ -155,6 +155,7 @@ const hirePharmacist=asyncHandler(
         return res.status(200).json(new ApiResponse(200,rows,`hired pharmacist_id=${pharmacist_id} in shopId=${shop_id}`))
 
     }
-)
+);
+
 
 export {isManager,getEmployeeDetails,removeEmployee,updateEmployeeSalary,addEmployee,getAllEmployables,hirePharmacist}
