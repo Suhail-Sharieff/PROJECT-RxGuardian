@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:rxGuardian/constants/colors.dart';
@@ -22,6 +21,8 @@ class ShopSale {
   final int pharmacistId;
   final String soldBy;
   final DateTime soldOn;
+  final String customerName;
+  final String customerPhone;
 
   ShopSale({
     required this.saleId,
@@ -31,6 +32,8 @@ class ShopSale {
     this.grandTotal,
     required this.pharmacistId,
     required this.soldBy,
+    required this.customerName,
+    required this.customerPhone,
     required this.soldOn,
   });
 
@@ -44,6 +47,8 @@ class ShopSale {
       pharmacistId: json['pharmacist_id'],
       soldBy: json['sold_by'],
       soldOn: DateTime.parse(json['sold_on']),
+      customerName: json['customer_name'],
+      customerPhone: json['customer_phone'],
     );
   }
 }
@@ -80,11 +85,16 @@ class SaleDataController extends GetxController {
     final accessToken = authController.accessToken;
     var url = Uri.http(main_uri, '/sale/getOverallSales', queryParams);
     try {
-      var res = await http.get(url, headers: {'authorization': 'Bearer $accessToken'});
+      var res = await http.get(
+        url,
+        headers: {'authorization': 'Bearer $accessToken'},
+      );
       if (res.statusCode == 200) {
         return jsonDecode(res.body)['data'];
       } else {
-        throw Exception('Failed to load sales: ${jsonDecode(res.body)['message']}');
+        throw Exception(
+          'Failed to load sales: ${jsonDecode(res.body)['message']}',
+        );
       }
     } catch (e) {
       throw Exception('An error occurred: ${e.toString()}');
@@ -95,11 +105,16 @@ class SaleDataController extends GetxController {
     final accessToken = authController.accessToken;
     var url = Uri.http(main_uri, '/sale/getDetailsOfSale/$saleId');
     try {
-      var res = await http.get(url, headers: {'authorization': 'Bearer $accessToken'});
+      var res = await http.get(
+        url,
+        headers: {'authorization': 'Bearer $accessToken'},
+      );
       if (res.statusCode == 200) {
         return jsonDecode(res.body)['data'];
       } else {
-        throw Exception('Failed to load sale details: ${jsonDecode(res.body)['message']}');
+        throw Exception(
+          'Failed to load sale details: ${jsonDecode(res.body)['message']}',
+        );
       }
     } catch (e) {
       throw Exception('An error occurred: ${e.toString()}');
@@ -128,7 +143,8 @@ class SaleUIController extends GetxController {
     super.onInit();
     fetchSalesData();
     scrollController.addListener(() {
-      if (scrollController.position.maxScrollExtent == scrollController.offset) {
+      if (scrollController.position.maxScrollExtent ==
+          scrollController.offset) {
         fetchSalesData();
       }
     });
@@ -162,25 +178,41 @@ class SaleUIController extends GetxController {
     try {
       final queryParams = {
         'pgNo': pageNumber.toString(),
-        if (nameSearchController.text.isNotEmpty) 'searchByName': nameSearchController.text,
-        if (saleIdSearchController.text.isNotEmpty) 'searchBySaleId': saleIdSearchController.text,
-        if (pharmacistIdSearchController.text.isNotEmpty) 'searchByPharmacistId': pharmacistIdSearchController.text,
+        if (nameSearchController.text.isNotEmpty)
+          'searchByName': nameSearchController.text,
+        if (saleIdSearchController.text.isNotEmpty)
+          'searchBySaleId': saleIdSearchController.text,
+        if (pharmacistIdSearchController.text.isNotEmpty)
+          'searchByPharmacistId': pharmacistIdSearchController.text,
       };
 
-      final List<dynamic> data = await _dataController.getOverallSales(queryParams);
+      final List<dynamic> data = await _dataController.getOverallSales(
+        queryParams,
+      );
+      // log(data.toString());
       final newData = data.map((item) => ShopSale.fromJson(item)).toList();
 
       if (newData.isEmpty) {
         hasMoreData = false;
         if (pageNumber > 1) {
-          Get.snackbar("Notice", "You've reached the end of the list.", backgroundColor: kWarningColor, colorText: Colors.white);
+          Get.snackbar(
+            "Notice",
+            "You've reached the end of the list.",
+            backgroundColor: kWarningColor,
+            colorText: Colors.white,
+          );
         }
       } else {
         salesList.addAll(newData);
         pageNumber++;
       }
     } catch (err) {
-      Get.snackbar('Error', err.toString().replaceAll('Exception: ', ''), backgroundColor: kErrorColor, colorText: Colors.white);
+      Get.snackbar(
+        'Error',
+        err.toString().replaceAll('Exception: ', ''),
+        backgroundColor: kErrorColor,
+        colorText: Colors.white,
+      );
       hasMoreData = false;
     } finally {
       isLoading(false);
@@ -197,11 +229,18 @@ class SaleUIController extends GetxController {
 
   Future<void> viewSaleDetails(ShopSale sale) async {
     try {
-      final List<dynamic> data = await _dataController.getDetailsOfSale(sale.saleId);
+      final List<dynamic> data = await _dataController.getDetailsOfSale(
+        sale.saleId,
+      );
       final items = data.map((item) => SaleItemDetail.fromJson(item)).toList();
       Get.dialog(_SaleDetailsDialog(sale: sale, items: items));
     } catch (err) {
-      Get.snackbar('Error', err.toString().replaceAll('Exception: ', ''), backgroundColor: kErrorColor, colorText: Colors.white);
+      Get.snackbar(
+        'Error',
+        err.toString().replaceAll('Exception: ', ''),
+        backgroundColor: kErrorColor,
+        colorText: Colors.white,
+      );
     }
   }
 }
@@ -226,14 +265,29 @@ class ShopSaleDetailsPage extends StatelessWidget {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(180.0),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Column(
               children: [
-                _SearchTextField(controller: controller.nameSearchController, hintText: 'Search by Pharmacist Name...', icon: Icons.person_search_outlined),
+                _SearchTextField(
+                  controller: controller.nameSearchController,
+                  hintText: 'Search by Pharmacist Name...',
+                  icon: Icons.person_search_outlined,
+                ),
                 const SizedBox(height: 8),
-                _SearchTextField(controller: controller.saleIdSearchController, hintText: 'Search by Sale ID...', icon: Icons.receipt_long_outlined),
+                _SearchTextField(
+                  controller: controller.saleIdSearchController,
+                  hintText: 'Search by Sale ID...',
+                  icon: Icons.receipt_long_outlined,
+                ),
                 const SizedBox(height: 8),
-                _SearchTextField(controller: controller.pharmacistIdSearchController, hintText: 'Search by Pharmacist ID...', icon: Icons.badge_outlined),
+                _SearchTextField(
+                  controller: controller.pharmacistIdSearchController,
+                  hintText: 'Search by Pharmacist ID...',
+                  icon: Icons.badge_outlined,
+                ),
               ],
             ),
           ),
@@ -241,20 +295,31 @@ class ShopSaleDetailsPage extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
+          return const Center(
+            child: CircularProgressIndicator(color: kPrimaryColor),
+          );
         }
         if (controller.salesList.isEmpty) {
-          return Center(child: Text("No sales data found.", style: TextStyle(color: theme.hintColor)));
+          return Center(
+            child: Text(
+              "No sales data found.",
+              style: TextStyle(color: theme.hintColor),
+            ),
+          );
         }
         return ListView.builder(
           controller: controller.scrollController,
           padding: const EdgeInsets.all(16.0),
-          itemCount: controller.salesList.length + (controller.isLoadingMore.value ? 1 : 0),
+          itemCount:
+              controller.salesList.length +
+              (controller.isLoadingMore.value ? 1 : 0),
           itemBuilder: (context, index) {
             if (index == controller.salesList.length) {
               return const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16.0),
-                child: Center(child: CircularProgressIndicator(color: kPrimaryColor)),
+                child: Center(
+                  child: CircularProgressIndicator(color: kPrimaryColor),
+                ),
               );
             }
             final item = controller.salesList[index];
@@ -272,7 +337,11 @@ class _SearchTextField extends StatelessWidget {
   final String hintText;
   final IconData icon;
 
-  const _SearchTextField({required this.controller, required this.hintText, required this.icon});
+  const _SearchTextField({
+    required this.controller,
+    required this.hintText,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -286,8 +355,14 @@ class _SearchTextField extends StatelessWidget {
         prefixIcon: Icon(icon, color: theme.hintColor, size: 20),
         filled: true,
         fillColor: theme.dividerColor.withOpacity(0.1),
-        contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 12.0),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 10.0,
+          horizontal: 12.0,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.0),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }
@@ -317,14 +392,42 @@ class _SaleCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Sale #${sale.saleId}', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              Text('₹${(sale.grandTotal ?? 0).toStringAsFixed(2)}', style: theme.textTheme.titleLarge?.copyWith(color: kPrimaryColor, fontWeight: FontWeight.bold)),
+              Text(
+                'Sale #${sale.saleId}',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '₹${(sale.grandTotal ?? 0).toStringAsFixed(2)}',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: kPrimaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          _InfoRow(icon: Icons.person_outline, text: 'Sold by: ${sale.soldBy} (ID: ${sale.pharmacistId})'),
+          _InfoRow(
+            icon: Icons.person_outline,
+            text: 'Sold by: ${sale.soldBy} (ID: ${sale.pharmacistId})',
+          ),
           const SizedBox(height: 4),
-          _InfoRow(icon: Icons.calendar_today_outlined, text: 'Sold on: ${DateFormat('d MMM yyyy, h:mm a').format(sale.soldOn)}'),
+          _InfoRow(
+            icon: Icons.calendar_today_outlined,
+            text:
+                'Sold on: ${DateFormat('d MMM yyyy, h:mm a').format(sale.soldOn)}',
+          ),
+          _InfoRow(
+            icon: Icons.person,
+            text:
+                'Purchased By: ${sale.customerName}',
+          ),
+          _InfoRow(
+            icon: Icons.phone,
+            text:
+            'Customer Ph: ${sale.customerPhone}',
+          ),
           const Divider(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -332,8 +435,14 @@ class _SaleCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Subtotal: ₹${(sale.total ?? 0).toStringAsFixed(2)}', style: theme.textTheme.bodySmall),
-                  Text('Discount: - ₹${sale.discount.toStringAsFixed(2)}', style: theme.textTheme.bodySmall),
+                  Text(
+                    'Subtotal: ₹${(sale.total ?? 0).toStringAsFixed(2)}',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  Text(
+                    'Discount: - ₹${sale.discount.toStringAsFixed(2)}',
+                    style: theme.textTheme.bodySmall,
+                  ),
                 ],
               ),
               ElevatedButton.icon(
@@ -378,7 +487,10 @@ class _SaleDetailsDialog extends StatelessWidget {
     final theme = Theme.of(context);
     return AlertDialog(
       backgroundColor: theme.cardColor,
-      title: Text('Details for Sale #${sale.saleId}', style: theme.textTheme.titleLarge),
+      title: Text(
+        'Details for Sale #${sale.saleId}',
+        style: theme.textTheme.titleLarge,
+      ),
       content: SizedBox(
         width: 400,
         child: Column(
@@ -386,24 +498,64 @@ class _SaleDetailsDialog extends StatelessWidget {
           children: [
             const Divider(),
             if (items.isEmpty)
-              const Center(child: Padding(padding: EdgeInsets.all(16.0), child: Text('No item details available.')))
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('No item details available.'),
+                ),
+              )
             else
               Table(
-                columnWidths: const {0: FlexColumnWidth(4), 1: FlexColumnWidth(1), 2: FlexColumnWidth(2)},
+                columnWidths: const {
+                  0: FlexColumnWidth(4),
+                  1: FlexColumnWidth(1),
+                  2: FlexColumnWidth(2),
+                },
                 children: [
-                  TableRow(children: [
-                    Text('Item', style: theme.textTheme.bodySmall),
-                    Text('Qty', textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
-                    Text('Price', textAlign: TextAlign.right, style: theme.textTheme.bodySmall),
-                  ]),
-                  const TableRow(children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)]),
-                  ...items.map((item) => TableRow(
-                      children: [
-                        Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text(item.name)),
-                        Text(item.quantity.toString(), textAlign: TextAlign.center),
-                        Text('₹${item.sellingPrice.toStringAsFixed(2)}', textAlign: TextAlign.right),
-                      ]
-                  )).toList()
+                  TableRow(
+                    children: [
+                      Text('Item', style: theme.textTheme.bodySmall),
+                      Text(
+                        'Qty',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      Text(
+                        'Price',
+                        textAlign: TextAlign.right,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                  const TableRow(
+                    children: [
+                      SizedBox(height: 8),
+                      SizedBox(height: 8),
+                      SizedBox(height: 8),
+                    ],
+                  ),
+                  ...items
+                      .map(
+                        (item) => TableRow(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 4.0,
+                              ),
+                              child: Text(item.name),
+                            ),
+                            Text(
+                              item.quantity.toString(),
+                              textAlign: TextAlign.center,
+                            ),
+                            Text(
+                              '₹${item.sellingPrice.toStringAsFixed(2)}',
+                              textAlign: TextAlign.right,
+                            ),
+                          ],
+                        ),
+                      )
+                      .toList(),
                 ],
               ),
             const Divider(),

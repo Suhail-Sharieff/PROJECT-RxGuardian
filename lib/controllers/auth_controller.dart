@@ -267,4 +267,14 @@ class AuthController extends GetxController {
     }
   }
 
+
+  Future<String>shopname()async{
+    var url = Uri.http(main_uri, '/shop/getShopName');
+    var res = await http.get(
+      url,
+      headers: {'authorization': 'Bearer $accessToken'},
+    );
+    return jsonDecode(res.body)['data'];
+  }
+
 }

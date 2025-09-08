@@ -63,14 +63,7 @@ class ManagerConsolePage extends StatelessWidget {
               },
             ),
             // Placeholder for another manager feature
-            FeatureCard(
-              icon: Icons.inventory_2_outlined,
-              title: 'Inventory Overview',
-              description: 'Get a high-level overview of the current stock status.',
-              onTap: () {
-                // TODO: Navigate to Inventory Overview Page
-              },
-            ),
+
           ],
         ),
       ),

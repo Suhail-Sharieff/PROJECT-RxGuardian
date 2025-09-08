@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:rxGuardian/constants/colors.dart';
@@ -46,7 +45,7 @@ class DrugSearchResult {
 class CartItem {
   final DrugSearchResult drug;
   RxInt quantity;
-  RxDouble discount; // Item-specific discount
+  RxDouble discount;
 
   CartItem({required this.drug, int quantity = 1, double discount = 0.0})
       : quantity = quantity.obs,
@@ -56,7 +55,24 @@ class CartItem {
   double get totalItemPrice => itemSubtotal - discount.value;
 }
 
-// --- DATA CONTROLLER (API Logic) ---
+class Customer {
+  final int customerId;
+  final String name;
+  final String phone;
+
+  Customer({required this.customerId, required this.name, required this.phone});
+
+  factory Customer.fromJson(Map<String, dynamic> json) {
+    return Customer(
+      customerId: json['customer_id'],
+      name: json['name'],
+      phone: json['phone'],
+    );
+  }
+}
+
+
+// --- DATA CONTROLLERS ---
 class BillingDataController extends GetxController {
   final authController = Get.find<AuthController>();
 
@@ -75,10 +91,9 @@ class BillingDataController extends GetxController {
     }
   }
 
-  // UPDATED: Aligned with the new initSale backend function
-  Future<Map<String, dynamic>> initSale(List<Map<String, dynamic>> saleItems, double totalDiscount) async {
+  Future<Map<String, dynamic>> initSale(List<Map<String, dynamic>> saleItems, double totalDiscount, int customerId) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/sale/initSale'); // UPDATED: Endpoint changed
+    var url = Uri.http(main_uri, '/sale/initSale');
     try {
       var res = await http.post(
         url,
@@ -88,11 +103,12 @@ class BillingDataController extends GetxController {
         },
         body: jsonEncode({
           'items': saleItems,
-          'discount': totalDiscount
+          'discount': totalDiscount,
+          'customer_id': customerId,
         }),
       );
       final decodedBody = jsonDecode(res.body);
-      if (res.statusCode != 200) { // UPDATED: Success code is 200
+      if (res.statusCode != 200) {
         throw Exception('Failed to create sale: ${decodedBody['message']}');
       }
       return decodedBody['data'];
@@ -102,24 +118,86 @@ class BillingDataController extends GetxController {
   }
 }
 
+class CustomerDataController extends GetxController {
+  final authController = Get.find<AuthController>();
+
+  Future<List<Customer>> getCustomerByPhone(String phone) async {
+    final accessToken = authController.accessToken;
+    var url = Uri.http(main_uri, '/customer/getCutomerByPhone', {'searchByPhone': phone});
+    try {
+      var res = await http.get(url, headers: {'authorization': 'Bearer $accessToken'});
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body)['data'] as List;
+        return data.map((item) => Customer.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to find customer');
+      }
+    } catch (e) {
+      throw Exception('An error occurred: ${e.toString()}');
+    }
+  }
+
+  // UPDATED: This function now correctly handles the new API response.
+  Future<Customer> createCustomer(String name, String phone) async {
+    final accessToken = authController.accessToken;
+    var url = Uri.http(main_uri, '/customer/createCustomer');
+    try {
+      var res = await http.post(
+        url,
+        headers: {
+          'authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'name': name, 'phone': phone}),
+      );
+      final decodedBody = jsonDecode(res.body);
+      // The status code can be 200 or 201 for success
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final insertId = decodedBody['data']['insertId'];
+        if (insertId != null) {
+          // Manually construct the Customer object since the API doesn't return it
+          return Customer(customerId: insertId, name: name, phone: phone);
+        } else {
+          throw Exception('API did not return an insertId for the new customer.');
+        }
+      } else {
+        throw Exception('Failed to create customer: ${decodedBody['message']}');
+      }
+    } catch (e) {
+      throw Exception('An error occurred: ${e.toString()}');
+    }
+  }
+}
+
+
 // --- UI STATE CONTROLLER ---
 class BillingUIController extends GetxController {
-  final BillingDataController _dataController = Get.put(BillingDataController());
+  final BillingDataController _billingDataController = Get.put(BillingDataController());
+  final CustomerDataController _customerDataController = Get.put(CustomerDataController());
 
   var searchResults = <DrugSearchResult>[].obs;
-  var isSearching = false.obs;
+  var isSearchingDrugs = false.obs;
   var cartItems = <CartItem>[].obs;
-  Timer? _debounce;
+  Timer? _drugSearchDebounce;
 
   final nameSearchController = TextEditingController();
   final manufacturerSearchController = TextEditingController();
   final drugTypeSearchController = TextEditingController();
   final barcodeSearchController = TextEditingController();
+  final customerPhoneController = TextEditingController();
+
 
   var finalDiscountPercent = 0.0.obs;
   var gstRatePercent = 18.0.obs;
   var showAvailableOnly = true.obs;
   var lastSaleDetails = Rx<Map<String, dynamic>?>(null);
+
+  var selectedCustomer = Rx<Customer?>(null);
+  var isSearchingCustomer = false.obs;
+  var customerNotFound = false.obs;
+  var customerSearchResults = <Customer>[].obs;
+  Timer? _customerSearchDebounce;
+
 
   double get subtotal => cartItems.fold(0, (sum, item) => sum + item.itemSubtotal);
   double get totalItemDiscount => cartItems.fold(0, (sum, item) => sum + item.discount.value);
@@ -129,31 +207,33 @@ class BillingUIController extends GetxController {
   double get grandTotal => totalAfterItemDiscounts + gstAmount - finalDiscountAmount;
   double get totalDiscountForAPI => totalItemDiscount + finalDiscountAmount;
 
-
   @override
   void onInit() {
     super.onInit();
-    nameSearchController.addListener(_onSearchChanged);
-    manufacturerSearchController.addListener(_onSearchChanged);
-    drugTypeSearchController.addListener(_onSearchChanged);
-    barcodeSearchController.addListener(_onSearchChanged);
-    showAvailableOnly.listen((_) => _onSearchChanged());
+    nameSearchController.addListener(_onDrugSearchChanged);
+    manufacturerSearchController.addListener(_onDrugSearchChanged);
+    drugTypeSearchController.addListener(_onDrugSearchChanged);
+    barcodeSearchController.addListener(_onDrugSearchChanged);
+    showAvailableOnly.listen((_) => _onDrugSearchChanged());
+    customerPhoneController.addListener(_onCustomerSearchChanged);
   }
 
   @override
   void onClose() {
-    _debounce?.cancel();
+    _drugSearchDebounce?.cancel();
+    _customerSearchDebounce?.cancel();
     nameSearchController.dispose();
     manufacturerSearchController.dispose();
     drugTypeSearchController.dispose();
     barcodeSearchController.dispose();
+    customerPhoneController.dispose();
     super.onClose();
   }
 
-  void _onSearchChanged() {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    isSearching.value = true;
-    _debounce = Timer(const Duration(milliseconds: 700), () async {
+  void _onDrugSearchChanged() {
+    if (_drugSearchDebounce?.isActive ?? false) _drugSearchDebounce!.cancel();
+    isSearchingDrugs.value = true;
+    _drugSearchDebounce = Timer(const Duration(milliseconds: 700), () async {
       final hasSearchText = nameSearchController.text.isNotEmpty ||
           manufacturerSearchController.text.isNotEmpty ||
           drugTypeSearchController.text.isNotEmpty ||
@@ -169,16 +249,16 @@ class BillingUIController extends GetxController {
             'availableOnly': showAvailableOnly.value.toString(),
           };
 
-          final data = await _dataController.searchDrugs(queryParams);
+          final data = await _billingDataController.searchDrugs(queryParams);
           searchResults.value = data.map((item) => DrugSearchResult.fromJson(item)).toList();
         } catch (e) {
           Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''), backgroundColor: kErrorColor, colorText: Colors.white);
         } finally {
-          isSearching.value = false;
+          isSearchingDrugs.value = false;
         }
       } else {
         searchResults.clear();
-        isSearching.value = false;
+        isSearchingDrugs.value = false;
       }
     });
   }
@@ -214,29 +294,104 @@ class BillingUIController extends GetxController {
     cartItems.clear();
     finalDiscountPercent.value = 0.0;
     lastSaleDetails.value = null;
+    selectedCustomer.value = null;
+    customerPhoneController.clear();
+    customerSearchResults.clear();
+    customerNotFound.value = false;
+  }
+
+  void _onCustomerSearchChanged() {
+    if (_customerSearchDebounce?.isActive ?? false) _customerSearchDebounce!.cancel();
+    isSearchingCustomer.value = true;
+    customerNotFound.value = false;
+    _customerSearchDebounce = Timer(const Duration(milliseconds: 600), () async {
+      final phone = customerPhoneController.text;
+      if (phone.length < 3) {
+        customerSearchResults.clear();
+        isSearchingCustomer.value = false;
+        return;
+      }
+      try {
+        final customers = await _customerDataController.getCustomerByPhone(phone);
+        if (customers.isNotEmpty) {
+          customerSearchResults.value = customers;
+        } else {
+          customerSearchResults.clear();
+          customerNotFound.value = true;
+        }
+      } catch(e) {
+        Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''), backgroundColor: kErrorColor, colorText: Colors.white);
+      } finally {
+        isSearchingCustomer.value = false;
+      }
+    });
+  }
+
+  void selectCustomer(Customer customer) {
+    selectedCustomer.value = customer;
+    customerSearchResults.clear();
+    customerPhoneController.text = customer.phone;
+    customerNotFound.value = false;
+  }
+
+  void showAddCustomerDialog() {
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController(text: customerPhoneController.text);
+    Get.dialog(
+        AlertDialog(
+          title: const Text('Add New Customer'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Customer Name')),
+              TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone Number')),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: Get.back, child: const Text('Cancel')),
+            ElevatedButton(onPressed: () => _createCustomer(nameCtrl.text, phoneCtrl.text), child: const Text('Create')),
+          ],
+        )
+    );
+  }
+
+  Future<void> _createCustomer(String name, String phone) async {
+    if (name.isEmpty || phone.isEmpty) {
+      Get.snackbar('Warning', 'Both name and phone are required.', backgroundColor: kWarningColor, colorText: Colors.white);
+      return;
+    }
+    Get.back();
+    try {
+      final newCustomer = await _customerDataController.createCustomer(name, phone);
+      selectCustomer(newCustomer);
+    } catch (e) {
+      Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''), backgroundColor: kErrorColor, colorText: Colors.white);
+    }
   }
 
   Future<void> finalizeSale() async {
+    if (selectedCustomer.value == null) {
+      Get.snackbar('Error', 'Please select a customer before finalizing the sale.', backgroundColor: kErrorColor, colorText: Colors.white);
+      return;
+    }
     if (cartItems.isEmpty) {
       Get.snackbar('Warning', 'Cannot finalize an empty bill.', backgroundColor: kWarningColor, colorText: Colors.white);
       return;
     }
     try {
-      // UPDATED: The backend now only needs drug_id and quantity for each item.
       final saleItems = cartItems.map((item) => {
         'drug_id': item.drug.drugId,
         'quantity': item.quantity.value,
       }).toList();
 
-      // UPDATED: Pass the simplified items list and the total discount to the new API function.
-      final saleData = await _dataController.initSale(saleItems, totalDiscountForAPI);
+      final saleData = await _billingDataController.initSale(saleItems, totalDiscountForAPI, selectedCustomer.value!.customerId);
       final authController = Get.find<AuthController>();
-      // final shopName = authController.user.value?.shopName ?? 'My Pharmacy';
-      final shopName = 'My Pharmacy';
+      final shopName = await authController.shopname();
 
       lastSaleDetails.value = {
         'sale_id': saleData['sale_id'],
         'shop_name': shopName,
+        'customer_name': selectedCustomer.value!.name,
         'items': List<CartItem>.from(cartItems),
         'subtotal': subtotal,
         'item_discounts': totalItemDiscount,
@@ -278,11 +433,15 @@ class BillingConsolePage extends StatelessWidget {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  _DrugSearchSection(),
+                  _CustomerSection(),
                   const SizedBox(height: 16),
-                  _CurrentBillSection(),
-                  const SizedBox(height: 16),
-                  _BillSummarySection(),
+                  if (controller.selectedCustomer.value != null) ...[
+                    _DrugSearchSection(),
+                    const SizedBox(height: 16),
+                    _CurrentBillSection(),
+                    const SizedBox(height: 16),
+                    _BillSummarySection(),
+                  ]
                 ],
               ),
             ),
@@ -295,6 +454,100 @@ class BillingConsolePage extends StatelessWidget {
   }
 }
 
+class _CustomerSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<BillingUIController>();
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Obx(() {
+        if (controller.selectedCustomer.value != null) {
+          final customer = controller.selectedCustomer.value!;
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('CUSTOMER', style: theme.textTheme.labelSmall),
+                  Text(customer.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(customer.phone, style: theme.textTheme.bodyMedium),
+                ],
+              ),
+              TextButton(onPressed: () {
+                controller.selectedCustomer.value = null;
+                controller.customerPhoneController.clear();
+              }, child: const Text('Change'))
+            ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Find or Create a Customer', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller.customerPhoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                  labelText: 'Enter Customer Phone Number',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: Obx(() => controller.isSearchingCustomer.value
+                      ? const Padding(padding: EdgeInsets.all(12.0), child: SizedBox(height: 10, width: 10, child: CircularProgressIndicator(strokeWidth: 2)))
+                      : const Icon(Icons.search)
+                  )
+              ),
+            ),
+            Obx(() {
+              if (controller.customerSearchResults.isNotEmpty) {
+                return Container(
+                  decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]
+                  ),
+                  height: 150,
+                  child: ListView.builder(
+                    itemCount: controller.customerSearchResults.length,
+                    itemBuilder: (context, index) {
+                      final customer = controller.customerSearchResults[index];
+                      return ListTile(
+                        title: Text(customer.name),
+                        subtitle: Text(customer.phone),
+                        onTap: () => controller.selectCustomer(customer),
+                      );
+                    },
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+            if(controller.customerNotFound.value)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Center(
+                  child: ElevatedButton.icon(
+                    onPressed: controller.showAddCustomerDialog,
+                    icon: const Icon(Icons.person_add_alt_1_outlined),
+                    label: const Text('Add New Customer'),
+                  ),
+                ),
+              ),
+          ],
+        );
+      }),
+    );
+  }
+}
+
+
 class _DrugSearchSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -303,9 +556,10 @@ class _DrugSearchSection extends StatelessWidget {
     return Column(
       children: [
         _SearchField(
-            controller: controller.nameSearchController,
-            hintText: 'Search by Name...',
-            icon: Icons.abc
+          controller: controller.nameSearchController,
+          hintText: 'Search by Name...',
+          icon: Icons.abc,
+          isSearching: controller.isSearchingDrugs,
         ),
         ExpansionTile(
           tilePadding: EdgeInsets.zero,
@@ -368,7 +622,9 @@ class _SearchField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final IconData icon;
-  const _SearchField({required this.controller, required this.hintText, required this.icon});
+  final RxBool? isSearching;
+
+  const _SearchField({required this.controller, required this.hintText, required this.icon, this.isSearching});
 
   @override
   Widget build(BuildContext context) {
@@ -380,6 +636,15 @@ class _SearchField extends StatelessWidget {
         hintText: hintText,
         hintStyle: TextStyle(color: theme.hintColor),
         prefixIcon: Icon(icon, size: 20),
+        suffixIcon: Obx(() {
+          if (isSearching?.value ?? false) {
+            return const Padding(
+              padding: EdgeInsets.all(12.0),
+              child: SizedBox(height: 10, width: 10, child: CircularProgressIndicator(strokeWidth: 2)),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
         filled: true,
         fillColor: theme.dividerColor.withOpacity(0.1),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -720,6 +985,10 @@ class _InvoiceView extends StatelessWidget {
                 Text('Sale ID: ${saleDetails['sale_id']}'),
                 Text(DateFormat('d MMM yyyy, h:mm a').format(saleDetails['date'])),
               ]),
+              const Divider(height: 24),
+              Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Billed To: ${saleDetails['customer_name']}', style: theme.textTheme.bodyMedium)),
               const Divider(height: 24),
               Table(
                 columnWidths: const {0: FlexColumnWidth(4), 1: FlexColumnWidth(1), 2: FlexColumnWidth(2)},
