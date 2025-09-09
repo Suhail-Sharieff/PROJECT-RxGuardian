@@ -94,5 +94,5 @@ Currently, this is an **MVP** (Minimum Viable Product). Many more advanced featu
 ---
 
 ## 👨‍💻 Contributors
-- Built with ❤️ by **Team RxGuardian**
+- Built with ❤️ by **Suhail**
 
