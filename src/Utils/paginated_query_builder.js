@@ -43,6 +43,9 @@ export function buildPaginatedFilters({ req, defaultLimit = 10, baseParams = [],
       }else if(type=="month"){
         filters.push(`month(${column}) = ?`);
         params.push(Number(value));
+      }else if(type=="day"){
+        filters.push(`day(${column}) = ?`);
+        params.push(Number(value));
       }
     }
   });

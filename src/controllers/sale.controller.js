@@ -158,6 +158,7 @@ const getDateVsRevenue=asyncHandler(
             allowedFilters: [
               { key: "year", column: "sa.date", type: "year" },
               { key: "month", column: "sa.date", type: "month" },
+              { key: "day", column: "sa.date", type: "day" },
             ]
       });
         const query=
@@ -179,7 +180,38 @@ const getDateVsRevenue=asyncHandler(
         throw new ApiError(400,err.message);
       }
   }
+);
+
+const  getDateVsSale=asyncHandler(
+  async(req,res)=>{
+      try{
+        const shop_id=await getShopImWorkingIn(req,res);
+      const { limit, offset, whereClause, params } = buildPaginatedFilters({
+            req,
+            baseParams: [shop_id],
+            allowedFilters: [
+              { key: "year", column: "s.date", type: "year" },
+              { key: "month", column: "s.date", type: "month" },
+              { key: "day", column: "s.date", type: "day" },
+            ]
+      });
+      const query=`
+      SELECT 
+      DATE(s.date) AS sale_date,
+      HOUR(s.date) AS sale_hour,
+      COUNT(s.sale_id) AS nSales,
+      count(distinct s.customer_id) as nCustomers
+      FROM sale AS s
+      WHERE s.shop_id = ? ${whereClause}
+      GROUP BY DATE(s.date), HOUR(s.date)
+      ORDER BY sale_date, sale_hour
+      limit ${limit} offset ${offset}
+      `
+      const [rows]=await db.execute(query,params);
+      return res.status(200).json(new ApiResponse(200,rows,"Fetched date vs sales"))
+      }catch(err){throw new ApiError(400,err.message)}
+  }
 )
 
 
-export { initSale,getOverallSales,getDetailsOfSale, getDateVsRevenue };
+export { initSale,getOverallSales,getDetailsOfSale, getDateVsRevenue , getDateVsSale};
