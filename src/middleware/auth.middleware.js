@@ -23,7 +23,7 @@ export const verifyJWT = (req, res, next) => {
     };
 
     // console.log("✅ JWT verified, pharmacist attached:", req.pharmacist);
-    console.log("'pharmacist' can be now accesed using req.pharmacist");
+    console.log(`😁 JWT verified 'pharmacist' can be now accesed using req.pharmacist `);
     next();
   } catch (err) {
     console.error("❌ JWT verification failed:", err.message);

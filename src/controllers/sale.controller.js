@@ -145,7 +145,41 @@ const getDetailsOfSale=asyncHandler(
       throw new ApiError(400,err.message)
     }
   }
+);
+
+
+const getDateVsRevenue=asyncHandler(
+  async(req,res)=>{
+      try{
+        const shop_id=await getShopImWorkingIn(req,res);
+        const { limit, offset, whereClause, params } = buildPaginatedFilters({
+            req,
+            baseParams: [shop_id],
+            allowedFilters: [
+              { key: "year", column: "sa.date", type: "year" },
+              { key: "month", column: "sa.date", type: "month" },
+            ]
+      });
+        const query=
+        `select x.sold_on as date,sum(x.grand_total) as net_revenue from (select sa.sale_id,sa.shop_id,sa.date as sold_on,sum(d.selling_price*q.quantity) as total,sa.discount,
+        sum(d.selling_price*q.quantity)-sa.discount as grand_total
+        from sale as sa left join sale_item as si on sa.sale_id=si.sale_id
+        left join shop as sh on sa.shop_id=sh.shop_id
+        left join drug as d on si.drug_id=d.drug_id
+        left join quantity as q on d.drug_id=q.drug_id
+        where sa.shop_id=? ${whereClause}
+        group by sa.sale_id 
+        order by sold_on limit ${limit} offset ${offset}) as x group by sold_on
+
+`
+
+      const [rows]=await db.execute(query,params);
+      return res.status(200).json(new ApiResponse(200,rows,"Fetched!"));
+      }catch(err){
+        throw new ApiError(400,err.message);
+      }
+  }
 )
 
 
-export { initSale,getOverallSales,getDetailsOfSale };
+export { initSale,getOverallSales,getDetailsOfSale, getDateVsRevenue };

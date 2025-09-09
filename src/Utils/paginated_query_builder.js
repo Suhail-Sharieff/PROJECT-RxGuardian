@@ -37,6 +37,12 @@ export function buildPaginatedFilters({ req, defaultLimit = 10, baseParams = [],
       } else if (type === "number") {
         filters.push(`${column} = ?`);
         params.push(Number(value));
+      }else if(type==="year"){
+        filters.push(`year(${column}) = ?`);
+        params.push(Number(value));
+      }else if(type=="month"){
+        filters.push(`month(${column}) = ?`);
+        params.push(Number(value));
       }
     }
   });

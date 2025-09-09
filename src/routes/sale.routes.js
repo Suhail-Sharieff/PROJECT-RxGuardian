@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyJWT } from "../middleware/auth.middleware.js";
-import { getDetailsOfSale, getOverallSales, initSale } from "../controllers/sale.controller.js";
+import { getDateVsRevenue, getDetailsOfSale, getOverallSales, initSale } from "../controllers/sale.controller.js";
 
 
 
@@ -20,5 +20,10 @@ saleRouter
 saleRouter
 .route('/getDetailsOfSale/:sale_id')
 .get(getDetailsOfSale)
+
+
+saleRouter
+.route('/getDateVsRevenue')
+.get(getDateVsRevenue)
 
 export {saleRouter}

@@ -50,7 +50,12 @@ app.use(
 
     )
 )
+export const inspector = (req, res, next) => {
+    console.log(`🔎 Route [${req.method}] ${req.originalUrl}`);
+     next();
+};
 
+app.use(inspector)
 //configuring routes
 import { pharmacistRouter } from "./routes/pharmacist.routes.js"
 app.use('/auth',pharmacistRouter)

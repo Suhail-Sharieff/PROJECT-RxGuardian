@@ -95,7 +95,7 @@ const getPharmacistById = async (pharmacist_id) => {
 
 const loginPharmacist = asyncHandler(async (req, res) => {
     console.log("Fetching UI data for login...");
-    console.log(`Body received for login: ${JSON.stringify(req.body)}`);
+    // console.log(`Body received for login: ${JSON.stringify(req.body)}`);
 
     const { email, password } = req.body;
 
