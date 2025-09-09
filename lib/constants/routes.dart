@@ -2,6 +2,7 @@
 import 'package:get/get_navigation/src/routes/get_route.dart';
 import 'package:rxGuardian/widgets/pharmacist_profile.dart';
 
+import '../pages/advanced_analysis.dart';
 import '../pages/billing_console.dart';
 import '../pages/drug_stock_details.dart';
 import '../pages/forgot_password_page.dart';
@@ -33,7 +34,7 @@ const hiring_console_route='/hiringConsole/';
 const billing_console_route='/billingConsole/';
 const sale_details_route='/saleDetails/';
 const shop_registration_route='/registerForShop/';
-
+const performance_analysis_route='/advancedAnalysis';
 
 class AppPages {
   static final List<GetPage> pages = [
@@ -52,6 +53,6 @@ class AppPages {
     GetPage(name: billing_console_route, page: ()=>const BillingConsolePage()),
     GetPage(name: sale_details_route, page: ()=>const ShopSaleDetailsPage()),
     GetPage(name: shop_registration_route, page: ()=>const ShopRegistrationPage()),
-
+    GetPage(name:performance_analysis_route,page:()=>const PerformanceAnalysisPage())
   ];
 }

@@ -617,7 +617,6 @@ class _DrugSearchSection extends StatelessWidget {
     );
   }
 }
-
 class _SearchField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
@@ -636,15 +635,23 @@ class _SearchField extends StatelessWidget {
         hintText: hintText,
         hintStyle: TextStyle(color: theme.hintColor),
         prefixIcon: Icon(icon, size: 20),
-        suffixIcon: Obx(() {
-          if (isSearching?.value ?? false) {
+        // --- FIX STARTS HERE ---
+        // Only build the Obx widget if 'isSearching' is not null.
+        suffixIcon: isSearching != null
+            ? Obx(() {
+          // We can use ! here because we already checked for null.
+          if (isSearching!.value) {
             return const Padding(
               padding: EdgeInsets.all(12.0),
               child: SizedBox(height: 10, width: 10, child: CircularProgressIndicator(strokeWidth: 2)),
             );
           }
+          // Return an empty widget if not searching.
           return const SizedBox.shrink();
-        }),
+        })
+        // If 'isSearching' was never provided, the suffix is null (no icon).
+            : null,
+        // --- FIX ENDS HERE ---
         filled: true,
         fillColor: theme.dividerColor.withOpacity(0.1),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -653,7 +660,6 @@ class _SearchField extends StatelessWidget {
     );
   }
 }
-
 class _SearchResultCard extends StatelessWidget {
   final DrugSearchResult drug;
   const _SearchResultCard({required this.drug});

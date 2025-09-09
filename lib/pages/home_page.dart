@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:highlight/languages/http.dart';
 import 'package:http/http.dart';
 import 'package:rxGuardian/controllers/auth_controller.dart';
+import 'package:rxGuardian/pages/advanced_analysis.dart';
 import 'package:rxGuardian/pages/verify_email_page.dart';
 import 'package:rxGuardian/widgets/app_bar.dart';
 import 'package:rxGuardian/widgets/feature_card.dart';
@@ -117,6 +118,14 @@ class _HomePageContent extends StatelessWidget {
                 } else {
                   showToast(context, "You dont have access to this console only your manager does!", ToastType.WARNING);
                 }
+              },
+            ),FeatureCard(
+              icon: Icons.people_outline,
+              title: 'Advanced Analysis',
+              description:
+                  'View detailed graphical view of data',
+              onTap: () async{
+                Navigator.of(context).pushNamed(PerformanceAnalysisPage.route_name);
               },
             ),
           ],
