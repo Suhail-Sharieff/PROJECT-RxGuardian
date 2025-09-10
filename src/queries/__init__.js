@@ -1,15 +1,17 @@
 const init_query = `
 -- ===============================
--- Pharmacist Table
+-- Schema
 -- ===============================
-CREATE TABLE IF NOT EXISTS pharmacist (
-    pharmacist_id INT PRIMARY KEY AUTO_INCREMENT,
+CREATE SCHEMA IF NOT EXISTS rxguardian DEFAULT CHARACTER SET utf8mb4;
+USE rxguardian;
+
+-- ===============================
+-- Customer Table
+-- ===============================
+CREATE TABLE IF NOT EXISTS customer (
+    customer_id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(50) NOT NULL,
-    dob VARCHAR(20) NOT NULL,
-    address VARCHAR(100) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
-    password VARCHAR(20) NOT NULL,
-    email VARCHAR(50) UNIQUE NOT NULL
+    phone VARCHAR(11) NOT NULL UNIQUE
 );
 
 -- ===============================
@@ -22,7 +24,22 @@ CREATE TABLE IF NOT EXISTS manufacturer (
     phone VARCHAR(50) NOT NULL,
     email VARCHAR(50) UNIQUE NOT NULL,
     license VARCHAR(50) NOT NULL,
-    password VARCHAR(50) NOT NULL
+    password VARCHAR(200)
+);
+
+-- ===============================
+-- Pharmacist Table
+-- ===============================
+CREATE TABLE IF NOT EXISTS pharmacist (
+    pharmacist_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50) NOT NULL,
+    dob DATE,
+    address VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    refreshToken TEXT,
+    joined_date DATE NOT NULL
 );
 
 -- ===============================
@@ -35,16 +52,36 @@ CREATE TABLE IF NOT EXISTS shop (
     manager_id INT,
     license VARCHAR(50) NOT NULL,
     name VARCHAR(50) NOT NULL,
-    established DATETIME DEFAULT NOW(),
-    CONSTRAINT fk_manager FOREIGN KEY (manager_id) 
+    established DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_manager FOREIGN KEY (manager_id)
         REFERENCES pharmacist(pharmacist_id) ON DELETE SET NULL
+);
+
+-- ===============================
+-- Employee & Salary Tables
+-- ===============================
+CREATE TABLE IF NOT EXISTS employee (
+    emp_id INT PRIMARY KEY AUTO_INCREMENT,
+    pharmacist_id INT,
+    shop_id INT,
+    CONSTRAINT fk_pharmacist_id FOREIGN KEY (pharmacist_id)
+        REFERENCES pharmacist(pharmacist_id) ON DELETE CASCADE,
+    CONSTRAINT fk_working_shop_id FOREIGN KEY (shop_id)
+        REFERENCES shop(shop_id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS salary (
+    salary_id INT PRIMARY KEY AUTO_INCREMENT,
+    salary DOUBLE NOT NULL DEFAULT 0,
+    emp_id INT NOT NULL,
+    FOREIGN KEY (emp_id) REFERENCES employee(emp_id) ON DELETE CASCADE
 );
 
 -- ===============================
 -- Drug Table
 -- ===============================
 CREATE TABLE IF NOT EXISTS drug (
-    drug_id INT PRIMARY KEY,
+    drug_id INT PRIMARY KEY AUTO_INCREMENT,
     type VARCHAR(50) NOT NULL,
     barcode VARCHAR(50) NOT NULL UNIQUE,
     dose DOUBLE NOT NULL,
@@ -52,7 +89,7 @@ CREATE TABLE IF NOT EXISTS drug (
     cost_price DOUBLE NOT NULL,
     selling_price DOUBLE NOT NULL,
     manufacturer_id INT,
-    production_date DATE NOT NULL DEFAULT (CURRENT_DATE()),
+    production_date DATE NOT NULL,
     expiry_date DATE NOT NULL,
     name VARCHAR(50) NOT NULL,
     CONSTRAINT fk_drug_manufacturer FOREIGN KEY (manufacturer_id)
@@ -64,7 +101,14 @@ CREATE TABLE IF NOT EXISTS drug (
 -- ===============================
 CREATE TABLE IF NOT EXISTS sale (
     sale_id INT PRIMARY KEY AUTO_INCREMENT,
-    date DATETIME DEFAULT NOW()
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    shop_id INT NOT NULL,
+    pharmacist_id INT,
+    discount INT DEFAULT 0,
+    customer_id INT,
+    FOREIGN KEY (shop_id) REFERENCES shop(shop_id) ON DELETE CASCADE,
+    FOREIGN KEY (pharmacist_id) REFERENCES pharmacist(pharmacist_id) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS sale_item (
@@ -72,29 +116,20 @@ CREATE TABLE IF NOT EXISTS sale_item (
     sale_id INT,
     drug_id INT,
     quantity INT NOT NULL,
-    discount DOUBLE NOT NULL,
     FOREIGN KEY (sale_id) REFERENCES sale(sale_id) ON DELETE CASCADE,
     FOREIGN KEY (drug_id) REFERENCES drug(drug_id) ON DELETE SET NULL
 );
 
 -- ===============================
--- Employee & Salary
+-- Quantity Table
 -- ===============================
-CREATE TABLE IF NOT EXISTS employee (
-    emp_id INT PRIMARY KEY AUTO_INCREMENT,
-    pharmacist_id INT,
+CREATE TABLE IF NOT EXISTS quantity (
+    drug_id INT,
     shop_id INT,
-    CONSTRAINT fk_pharmacist_id FOREIGN KEY (pharmacist_id) 
-        REFERENCES pharmacist(pharmacist_id) ON DELETE CASCADE,
-    CONSTRAINT fk_working_shop_id FOREIGN KEY (shop_id) 
-        REFERENCES shop(shop_id) ON DELETE SET NULL
-);
-
-CREATE TABLE IF NOT EXISTS salary (
-    salary_id INT PRIMARY KEY AUTO_INCREMENT,
-    salary DOUBLE NOT NULL DEFAULT 0,
-    emp_id INT NOT NULL,
-    FOREIGN KEY (emp_id) REFERENCES employee(emp_id) ON DELETE CASCADE
+    quantity INT NOT NULL DEFAULT 0,
+    UNIQUE KEY(drug_id, shop_id),
+    FOREIGN KEY (drug_id) REFERENCES drug(drug_id) ON DELETE CASCADE,
+    FOREIGN KEY (shop_id) REFERENCES shop(shop_id) ON DELETE CASCADE
 );
 
 -- ===============================
@@ -135,7 +170,7 @@ BEGIN
     END IF;
 END;
 
--- Trigger: Insert into employee when pharmacist is added
+-- Trigger: Insert employee after pharmacist creation
 DROP TRIGGER IF EXISTS trg_insert_employee_after_pharmacist;
 CREATE TRIGGER trg_insert_employee_after_pharmacist
 AFTER INSERT ON pharmacist
@@ -145,7 +180,7 @@ BEGIN
     VALUES (NEW.pharmacist_id, NULL);
 END;
 
--- Trigger: Insert salary when employee is added
+-- Trigger: Insert salary after employee creation
 DROP TRIGGER IF EXISTS trg_insert_salary_after_employee;
 CREATE TRIGGER trg_insert_salary_after_employee
 AFTER INSERT ON employee
@@ -154,25 +189,6 @@ BEGIN
     INSERT INTO salary (salary, emp_id)
     VALUES (0, NEW.emp_id);
 END;
-
-
-
-create table if not exists quantity(
-drug_id int,
-shop_id int,
-quantity int not null default 0,
-unique key(drug_id,shop_id),
-foreign key (drug_id) references drug(drug_id) on delete
- cascade,
- foreign key(shop_id) references shop(shop_id) on delete CASCADE
-);
-
-
-
-
 `;
 
-
-
-
-export {init_query}
+export { init_query };
