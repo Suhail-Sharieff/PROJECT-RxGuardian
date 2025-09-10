@@ -2,13 +2,14 @@ import { ApiError } from "../Utils/Api_Error.utils.js";
 import { ApiResponse } from "../Utils/Api_Response.utils.js";
 import { asyncHandler } from "../Utils/asyncHandler.utils.js";
 import { db } from "../Utils/sql_connection.utils.js";
+import { getShopImWorkingIn } from "./shop.controller.js";
 
 
 
 const getAllDrugDetails=asyncHandler(
     async(req,res)=>{
         try{
-             let { pgNo = 1 } = req.query;
+             let { pgNo = 1 } = req.params;
             if (!pgNo && req.body.pgNo) {
                 pgNo = req.body.pgNo;
             }
@@ -48,7 +49,72 @@ const getAllDrugDetails=asyncHandler(
     }
 )
 
+// Helper to default date range (YYYY-MM-DD)
+const defaultDateRange = () => {
+  const end = new Date();
+  const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  return {
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+  };
+};
+
+const topSellingDrugs = asyncHandler(async (req, res) => {
+  try {
+    const  shop_id  = await getShopImWorkingIn(req, res);
+    const { startDate, endDate } = req.params.startDate
+      ? { startDate: req.params.startDate, endDate: req.params.endDate || new Date().toISOString().slice(0, 10) }
+      : defaultDateRange();
+    const limit = parseInt(req.params.limit || "10", 10);
+    // console.log(`${shop_id} ${startDate} ${endDate} ${limit}`);
+    
+    const query = `
+      SELECT d.drug_id, d.name, SUM(si.quantity) AS totalSold
+      FROM sale_item si
+      JOIN sale s ON s.sale_id = si.sale_id
+      JOIN drug d ON d.drug_id = si.drug_id
+      WHERE s.shop_id = ?
+        AND s.date BETWEEN ? AND ?
+      GROUP BY d.drug_id
+      ORDER BY totalSold DESC
+      LIMIT ${limit};
+    `;
+
+    const [rows] = await db.execute(query, [shop_id, startDate, endDate]);
+    return res.status(200).json(new ApiResponse(200, rows, "Top selling drugs fetched"));
+  } catch (err) {
+    throw new ApiError(400, `Failed to fetch top selling drugs: ${err.message}`);
+  }
+});
+
+
+const topRevenueDrugs = asyncHandler(async (req, res) => {
+  try {
+    const  shop_id  = await getShopImWorkingIn(req, res);
+    const { startDate, endDate } = req.params.startDate
+      ? { startDate: req.params.startDate, endDate: req.params.endDate || new Date().toISOString().slice(0, 10) }
+      : defaultDateRange();
+    const limit = parseInt(req.params.limit || "10", 10);
+
+    const query = `
+      SELECT d.drug_id, d.name, SUM(si.quantity * d.selling_price) AS revenue
+      FROM sale_item si
+      JOIN sale s ON s.sale_id = si.sale_id
+      JOIN drug d ON d.drug_id = si.drug_id
+      WHERE s.shop_id = ?
+        AND s.date BETWEEN ? AND ?
+      GROUP BY d.drug_id
+      ORDER BY revenue DESC
+      LIMIT ${limit};
+    `;
+
+    const [rows] = await db.execute(query, [shop_id, startDate, endDate]);
+    return res.status(200).json(new ApiResponse(200, rows, "Top revenue drugs fetched"));
+  } catch (err) {
+    throw new ApiError(400, `Failed to fetch top revenue drugs: ${err.message}`);
+  }
+});
 
 
 
-export {getAllDrugDetails}
+export {getAllDrugDetails,topSellingDrugs,topRevenueDrugs}

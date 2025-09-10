@@ -213,5 +213,39 @@ const  getDateVsSale=asyncHandler(
   }
 )
 
+const defaultDateRange = () => {
+  const end = new Date();
+  const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  return {
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+  };
+};
 
-export { initSale,getOverallSales,getDetailsOfSale, getDateVsRevenue , getDateVsSale};
+const discountUsage = asyncHandler(async (req, res) => {
+  try {
+    const  shop_id  = await getShopImWorkingIn(req, res);
+    const { startDate, endDate } = req.params.startDate
+      ? { startDate: req.params.startDate, endDate: req.params.endDate || new Date().toISOString().slice(0, 10) }
+      : defaultDateRange();
+
+    const query = `
+      SELECT discount, COUNT(*) AS nSales, COALESCE(SUM(si.quantity * d.selling_price),0) AS revenue
+      FROM sale s
+      LEFT JOIN sale_item si ON si.sale_id = s.sale_id
+      LEFT JOIN drug d ON d.drug_id = si.drug_id
+      WHERE s.shop_id = ?
+        AND s.date BETWEEN ? AND ?
+      GROUP BY discount
+      ORDER BY discount DESC;
+    `;
+
+    const [rows] = await db.execute(query, [shop_id, startDate, endDate]);
+    return res.status(200).json(new ApiResponse(200, rows, "Discount usage fetched"));
+  } catch (err) {
+    throw new ApiError(400, `Failed to fetch discount usage: ${err.message}`);
+  }
+});
+
+
+export { initSale,getOverallSales,getDetailsOfSale, getDateVsRevenue , getDateVsSale,discountUsage};
