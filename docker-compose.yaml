@@ -22,6 +22,10 @@ services:
     env_file: .env
     depends_on:
       - rx_guardian_mysql_docker_service
+    ## 
+    volumes:
+      - .:/app    
+      - /app/node_modules 
 
 volumes:
   rx_guradian_docker_data:
@@ -30,6 +34,3 @@ volumes:
 
 
 
-## now run:  docker-compose -f .\docker-compose.yaml up -d
-## then to start: docker start rxgs
-## to stop: docker stop rxgs

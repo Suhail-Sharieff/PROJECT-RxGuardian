@@ -1,3 +1,5 @@
+## Docker file determines how the docker image is built whereas docker-compose file determines how the docker containers are run using the images
+
 FROM node:18-alpine
 
 # Create app directory
@@ -13,6 +15,9 @@ COPY package*.json ./
 
 # Install dependencies inside the container
 RUN npm install
+
+## Install nodemon globally for dev purpose ONLY
+RUN npm install -g nodemon 
 
 # Copy app source code
 COPY . .
