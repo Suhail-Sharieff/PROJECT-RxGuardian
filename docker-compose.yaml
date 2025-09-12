@@ -15,6 +15,7 @@ services:
 
   #node backend service
   rx_guradian_node_backend_service:
+    image: node:18
     build: .
     container_name: rx_node
     ports:
@@ -25,7 +26,6 @@ services:
     ## 
     volumes:
       - .:/app    
-      - /app/node_modules 
 
 volumes:
   rx_guradian_docker_data:

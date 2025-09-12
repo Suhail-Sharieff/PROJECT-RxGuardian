@@ -97,9 +97,13 @@ Currently, this is an **MVP** (Minimum Viable Product). Many more advanced featu
 
 ---
 ## Testing locally
-- Create a new connection with port `3306` in work bench and on root terminal run  `node index.js`
+- Create a new connection with port `3306` in work bench and on root terminal run  `nodemon index.js`, also set `env` file accordingly
 ## Testing with Docker
-- Create a new connection with port `9696` in workbench and run  `docker-compose up -build`
+- If first time,Create a new connection with port `9696` and password `RxGuardian@123`(u can change in compose file) in workbench and run  `docker-compose up --build`, if not fist time ie the container is already created, run `docker-compose up` will be enough
+- Suppose you made some change in code, then since the volume of code is also defined in copose file it will be synced, you just have  to restart server using `docker restart rx_node`, rx_node is the container name i have given  for node.
+- Suppose u want to enter bash/shell of `rx_node`(lets say), run `docker exec -it rx_node sh`
+- Suppose u want to install some node_package too, restarting server wont work coz since they are large they arent synced in volume, run command `docker exec -it rx_node npm install <package_name>
+`
 
 ## 👨‍💻 Contributors
 - Built with ❤️ by **Suhail**

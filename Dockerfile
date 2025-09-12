@@ -16,8 +16,6 @@ COPY package*.json ./
 # Install dependencies inside the container
 RUN npm install
 
-## Install nodemon globally for dev purpose ONLY
-RUN npm install -g nodemon 
 
 # Copy app source code
 COPY . .
