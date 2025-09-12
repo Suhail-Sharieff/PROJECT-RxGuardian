@@ -2,7 +2,7 @@ import { getPharmacistById } from "../controllers/pharmacist.controller.js";
 import { ApiError } from "./Api_Error.utils.js";
 import { db } from "./sql_connection.utils.js";
 import jwt from "jsonwebtoken"
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs"
 
 const generateAccessToken = (pharmacist)=>{
     return jwt.sign(

@@ -1,0 +1,35 @@
+# all these are with respect to .env file vars
+version: "3.8"
+
+services:
+  #mysql service 
+  rx_guardian_mysql_docker_service:
+    image: mysql:8.0
+    container_name: rx_sql
+    ports:
+      - "9696:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: RxGuardian@123
+    volumes:
+      - rx_guradian_docker_data:/var/lib/mysql
+
+  #node backend service
+  rx_guradian_node_backend_service:
+    build: .
+    container_name: rx_node
+    ports:
+      - "8080:8080"
+    env_file: .env
+    depends_on:
+      - rx_guardian_mysql_docker_service
+
+volumes:
+  rx_guradian_docker_data:
+    driver: local
+
+
+
+
+## now run:  docker-compose -f .\docker-compose.yaml up -d
+## then to start: docker start rxgs
+## to stop: docker stop rxgs

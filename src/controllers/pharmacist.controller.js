@@ -3,7 +3,7 @@ import { ApiError } from "../Utils/Api_Error.utils.js"
 import { ApiResponse } from "../Utils/Api_Response.utils.js";
 import { get_refresh_access_token } from "../Utils/token_generator.utils.js";
 import { db } from "../Utils/sql_connection.utils.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 
 const pharmacistRegisteredAlready = async (email) => {

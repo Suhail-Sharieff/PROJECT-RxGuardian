@@ -2,7 +2,7 @@ import { db } from "../Utils/sql_connection.utils.js";
 import { asyncHandler } from "../Utils/asyncHandler.utils.js";
 import { ApiError } from "../Utils/Api_Error.utils.js";
 import { ApiResponse } from "../Utils/Api_Response.utils.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 const getAllManufacturers = asyncHandler(async (req, res) => {
     let { pgNo = 1 } = req.query;

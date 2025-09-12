@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS pharmacist (
     password VARCHAR(255) NOT NULL,
     email VARCHAR(100) UNIQUE,
     refreshToken TEXT,
-    joined_date DATE NOT NULL
+    joined_date DATE NOT NULL DEFAULT (CURRENT_DATE)
 );
 
 -- ===============================

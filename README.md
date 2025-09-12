@@ -96,6 +96,10 @@ Currently, this is an **MVP** (Minimum Viable Product). Many more advanced featu
 - Integration with medical insurance providers  
 
 ---
+## Testing locally
+- Create a new connection with port `3306` in work bench and on root terminal run  `node index.js`
+## Testing with Docker
+- Create a new connection with port `9696` in workbench and run  `docker-compose up -build`
 
 ## 👨‍💻 Contributors
 - Built with ❤️ by **Suhail**
