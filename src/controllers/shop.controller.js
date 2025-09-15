@@ -133,7 +133,7 @@ const getShopNameImWorkingIn=
       const [rows]=await db.execute(`select name from shop where shop_id=?`,[shop_id]);
       return res.status(200).json(new ApiResponse(200,rows[0].name))
     }catch(err){
-      throw new ApiError(400,`Failed to fetch shop you work in ${err.message}!`)
+      throw new ApiError(400,`Failed to fetch shop name you work in ${err.message}!`)
     }
   }
 

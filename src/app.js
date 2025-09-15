@@ -56,6 +56,9 @@ export const inspector = (req, res, next) => {
 };
 
 app.use(inspector)
+
+
+
 //configuring routes
 import { pharmacistRouter } from "./routes/pharmacist.routes.js"
 app.use('/auth',pharmacistRouter)
@@ -102,6 +105,11 @@ app.use((err, req, res, next) => {
         message: err.message || "Internal Server Error"
     });
     throw err;
+});
+
+import path from "path";
+app.use('/', (req, res) => {
+    res.status(200).sendFile(path.join(process.cwd(), 'index.html'));
 });
 
 export {app}
