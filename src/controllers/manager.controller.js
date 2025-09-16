@@ -2,6 +2,7 @@ import { ApiError } from "../Utils/Api_Error.utils.js";
 import { ApiResponse } from "../Utils/Api_Response.utils.js";
 import { asyncHandler } from "../Utils/asyncHandler.utils.js";
 import { buildPaginatedFilters } from "../Utils/paginated_query_builder.js";
+import { redis } from "../Utils/redis.connection.js";
 import { db } from "../Utils/sql_connection.utils.js";
 const isManager=asyncHandler(async(req,res)=>{res.status(200).json(new ApiResponse(200,"You have access to manager console!"))})
 const getEmployeeDetails=asyncHandler(
@@ -18,6 +19,11 @@ const getEmployeeDetails=asyncHandler(
                             { key: "searchPharmacistByEmail", column: "p.email", type: "string" }
                         ]
                 });
+
+            const key=`getEmployeeDetails:${whereClause}:${params}:${limit}:${offset}`
+            const cache=await redis.get(key)
+            if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetch employee details from redis!"))
+            
             const query=
             `
             with cte as (select pharmacist_id,count(pharmacist_id) as cnt from sale  where shop_id=?
@@ -40,6 +46,11 @@ const getEmployeeDetails=asyncHandler(
             `
             const [rows]=await db.execute(query,params);
             if(rows.length===0) throw new ApiError(400,"Reached end of data!")
+
+            await redis.set(key,JSON.stringify(rows))
+            await redis.expire(key,30)
+
+
             return res.status(200).json(
                 new ApiResponse(200,rows,"Fetched employee data !")
             )
@@ -103,6 +114,12 @@ const getAllEmployables=asyncHandler(
                             { key: "searchPharmacistByEmail", column: "p.email", type: "string" }
                         ]
                 });
+
+    
+        const key=`getAllEmployables:${whereClause}:${params}:${limit}:${offset}`
+        const cache=await redis.get(key)
+        if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched employables from redis!"))
+
         const query=
         `select p.pharmacist_id,p.name,p.email,
         s.salary as prev_salary,
@@ -119,6 +136,9 @@ const getAllEmployables=asyncHandler(
 `
         const [rows]=await db.execute(query,params);
         if(rows.length==0) throw new ApiError(400,"No employables right now!")
+
+        await redis.set(key,JSON.stringify(rows))
+        await redis.expire(key,60)
         
         return res.status(200).json(new ApiResponse(200,rows))
     }

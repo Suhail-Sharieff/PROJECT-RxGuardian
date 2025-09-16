@@ -1,6 +1,7 @@
 import { ApiError } from "../Utils/Api_Error.utils.js";
 import { ApiResponse } from "../Utils/Api_Response.utils.js";
 import { asyncHandler } from "../Utils/asyncHandler.utils.js";
+import { redis } from "../Utils/redis.connection.js";
 import { db } from "../Utils/sql_connection.utils.js";
 import { getShopImWorkingIn } from "./shop.controller.js";
 
@@ -19,6 +20,11 @@ const getAllDrugDetails=asyncHandler(
             }
             const limit = 10;
             const offset = (page - 1) * limit;
+
+            const key=`getAllDrugDetails:${pgNo}:${limit}:${offset}`
+            const cache=await redis.get(key)
+            if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched from redis!"))
+
             const query=`
             SELECT 
             d.drug_id,
@@ -38,6 +44,10 @@ const getAllDrugDetails=asyncHandler(
             `
             
             const [rows]=await db.execute(query);
+
+
+            await redis.set(key,JSON.stringify(rows))
+            await redis.expire(key,60)
 
             return res.status(200).json(
                 new ApiResponse(200,rows)
@@ -67,6 +77,11 @@ const topSellingDrugs = asyncHandler(async (req, res) => {
       : defaultDateRange();
     const limit = parseInt(req.params.limit || "10", 10);
     // console.log(`${shop_id} ${startDate} ${endDate} ${limit}`);
+
+
+    const key=`topSellingDrugs:${shop_id}:${startDate}:${endDate}:${limit}`
+    const cache=await redis.get(key)
+    if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache)),"Fetched top selling drugs from redis!")
     
     const query = `
       SELECT d.drug_id, d.name, SUM(si.quantity) AS totalSold
@@ -81,6 +96,10 @@ const topSellingDrugs = asyncHandler(async (req, res) => {
     `;
 
     const [rows] = await db.execute(query, [shop_id, startDate, endDate]);
+
+    await redis.set(key,JSON.stringify(rows))
+    await redis.expire(key,30)
+
     return res.status(200).json(new ApiResponse(200, rows, "Top selling drugs fetched"));
   } catch (err) {
     throw new ApiError(400, `Failed to fetch top selling drugs: ${err.message}`);
@@ -96,6 +115,11 @@ const topRevenueDrugs = asyncHandler(async (req, res) => {
       : defaultDateRange();
     const limit = parseInt(req.params.limit || "10", 10);
 
+
+     const key=`topRevenueDrugs:${shop_id}:${startDate}:${endDate}:${limit}`
+    const cache=await redis.get(key)
+    if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache)),"Fetched top revenue drugs from redis!")
+
     const query = `
       SELECT d.drug_id, d.name, SUM(si.quantity * d.selling_price) AS revenue
       FROM sale_item si
@@ -109,6 +133,11 @@ const topRevenueDrugs = asyncHandler(async (req, res) => {
     `;
 
     const [rows] = await db.execute(query, [shop_id, startDate, endDate]);
+
+    await redis.set(key,JSON.stringify(rows))
+    await redis.expire(key,30)
+
+
     return res.status(200).json(new ApiResponse(200, rows, "Top revenue drugs fetched"));
   } catch (err) {
     throw new ApiError(400, `Failed to fetch top revenue drugs: ${err.message}`);

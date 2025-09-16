@@ -4,6 +4,7 @@ import { ApiResponse } from "../Utils/Api_Response.utils.js";
 import { get_refresh_access_token } from "../Utils/token_generator.utils.js";
 import { db } from "../Utils/sql_connection.utils.js";
 import bcrypt from "bcryptjs";
+import { redis } from "../Utils/redis.connection.js";
 
 
 const pharmacistRegisteredAlready = async (email) => {
@@ -344,12 +345,16 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         )
     );
 });
-
 const getCurrPharmacistProfile=asyncHandler(
   async(req,res)=>{
+
+      const cache=await redis.get('getCurrPharmacistProfile');
+      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched pharmacist profile from Redis"))
+
       var {pharmacist_id}=req.pharmacist;
       //if query is passed then that person must be choosed
-      if(req.query.pharmacist_id) pharmacist_id=req.query.pharmacist_id
+      if(req.query.pharmacist_id) pharmacist_id=req.query.
+      pharmacist_id
       const query=`
       select e.emp_id,e.pharmacist_id,s.shop_id,p.name as pharmacist_name
       ,s.name as shop_name,x.name as manager_name,sal.salary,
@@ -370,7 +375,10 @@ const getCurrPharmacistProfile=asyncHandler(
       on e.emp_id=sal.emp_id
       where p.pharmacist_id= ? `
 
-    const [rows]=await db.execute(query,[pharmacist_id])
+    const [rows]=await db.execute(query,[pharmacist_id]);
+
+    await redis.set('getCurrPharmacistProfile',JSON.stringify(rows[0]));
+    await redis.expire('getCurrPharmacistProfile',20);
 
     return res.status(200).json(
       new ApiResponse(

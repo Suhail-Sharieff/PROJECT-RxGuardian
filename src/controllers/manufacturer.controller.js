@@ -3,6 +3,7 @@ import { asyncHandler } from "../Utils/asyncHandler.utils.js";
 import { ApiError } from "../Utils/Api_Error.utils.js";
 import { ApiResponse } from "../Utils/Api_Response.utils.js";
 import bcrypt from "bcryptjs";
+import { redis } from "../Utils/redis.connection.js";
 
 const getAllManufacturers = asyncHandler(async (req, res) => {
     let { pgNo = 1 } = req.query;
@@ -16,6 +17,13 @@ const getAllManufacturers = asyncHandler(async (req, res) => {
     const limit = 10;
     const offset = (page - 1) * limit;
     const query = `SELECT * FROM manufacturer ORDER BY manufacturer_id LIMIT ${limit} OFFSET ${offset}`;
+
+
+    const key=`getAllManufacturers:${limit}:${offset}:${page}`
+    const cache=await redis.get(key)
+    if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetch manufactuers from redis!"))
+
+
     const [rows] = await db.execute(query);
     if (rows.length === 0) {
         return res.status(200).json(
@@ -27,6 +35,11 @@ const getAllManufacturers = asyncHandler(async (req, res) => {
         );
     }
     const manufacturers = rows;
+
+    await redis.set(key,JSON.stringify(manufacturers))
+    await redis.expire(key,40)
+
+
     return res.status(200).json(
         new ApiResponse(
             200,

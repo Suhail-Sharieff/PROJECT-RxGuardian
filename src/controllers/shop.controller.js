@@ -3,6 +3,7 @@ import { ApiResponse } from "../Utils/Api_Response.utils.js";
 import { asyncHandler } from "../Utils/asyncHandler.utils.js";
 import { db } from "../Utils/sql_connection.utils.js";
 import { buildPaginatedFilters } from "../Utils/paginated_query_builder.js";
+import { redis } from "../Utils/redis.connection.js";
 
 
 const getAllShopDetails=asyncHandler(
@@ -18,6 +19,12 @@ const getAllShopDetails=asyncHandler(
             }
             const limit = 10;
             const offset = (page - 1) * limit;
+
+            const key=`getAllShopDetails:${pgNo}:${offset}`
+            const cache=await redis.get(key)
+            if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched shop details from redis"))
+
+
             const query=`
             select s.shop_id,s.name as shop_name,s.address,s.phone,p.name as manager_name from shop as s
             left join pharmacist as p
@@ -26,6 +33,10 @@ const getAllShopDetails=asyncHandler(
             `
             const [rows]=await db.execute(query)
             if(page>=rows.length) throw new ApiError(400,"End of data!")
+
+            await redis.set(key,JSON.stringify(rows));
+            await redis.expire(key,20);
+            
             return res.status(200)
             .json(
                 new ApiResponse(200,rows,"Fetched all shop details!")
@@ -38,7 +49,8 @@ const getAllShopDetails=asyncHandler(
 
 const getMyShopAnalysis = asyncHandler(
     async (req, res) => {
-      const { pharmacist_id } = req.pharmacist;
+      try {
+        const { pharmacist_id } = req.pharmacist;
   
       const getMyShop = `
         SELECT s.shop_id AS myShopId, s.name AS myShopName
@@ -87,10 +99,17 @@ const getMyShopAnalysis = asyncHandler(
         ORDER BY d.type, m.name
         LIMIT ${limit} OFFSET ${offset};
       `;
-  
+      
+      const key=`getMyShopAnalysis:${whereClause}:${limit}:${offset}`
+      const cache=await redis.get(key)
+      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Getch shop analysis from redis"))
   
       const [rows] = await db.execute(query, params);
-  
+
+      await redis.set(key,JSON.stringify(rows))
+      await redis.expire(key,20)
+
+
       if (!rows) throw new ApiError(400, "Failed to fetch your shop analysis!");
       if (rows.length === 0)
         return res
@@ -98,6 +117,8 @@ const getMyShopAnalysis = asyncHandler(
           .json(
             new ApiResponse(200, [], `No results for your search in ${myShopName}`)
           );
+
+      
   
       return res
         .status(200)
@@ -108,6 +129,10 @@ const getMyShopAnalysis = asyncHandler(
             `Fetched shop details for ${myShopId}::${myShopName}!`
           )
         );
+    
+      } catch (err) {
+        throw new ApiError(400,`Error ${err.message}`)
+      }
     }
   );
 
@@ -115,11 +140,20 @@ const getShopImWorkingIn=
   async(req,res)=>{
     try{
       const {pharmacist_id}=req.pharmacist;
+
+      const key=`getShopImWorkingIn` 
+      const cache=await redis.get(key)
+      if(cache) return JSON.parse(cache)
+
       const query=`select e.shop_id from employee as e join pharmacist as p where e.pharmacist_id=? limit 1`
       const [rows]=await db.execute(query,[pharmacist_id]);
       if(rows.length===0) throw new ApiError(400,"You do not work anywhere!");
       // console.log(rows);
-      
+
+      await redis.set(key,JSON.stringify(rows[0].shop_id))
+      await redis.expire(key,30)
+
+
       return rows[0].shop_id;
     }catch(err){
       throw new ApiError(400,"Failed to fetch shop you work in !")
@@ -130,7 +164,18 @@ const getShopNameImWorkingIn=
     try{
       const shop_id=await getShopImWorkingIn(req,res);
       // console.log(shop_id);
+
+
+      const key=`getShopNameImWorkingIn` 
+      const cache=await redis.get(key)
+      if(cache) return res.status(200).json(JSON.parse(cache))
+
+
       const [rows]=await db.execute(`select name from shop where shop_id=?`,[shop_id]);
+
+      await redis.set(key,JSON.stringify(rows[0].name))
+      await redis.expire(key,30)
+
       return res.status(200).json(new ApiResponse(200,rows[0].name))
     }catch(err){
       throw new ApiError(400,`Failed to fetch shop name you work in ${err.message}!`)
@@ -177,8 +222,18 @@ const getMyShopDrugStock=asyncHandler(
         order by q.drug_id,q.quantity
         limit ${limit} offset ${offset}
       `
+
+      const key=`getMyShopDrugStock:${whereClause}:${limit}:${offset}`
+      const cache=await redis.get(key)
+      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched frug stock form redis"))
+
+
       const [rows]=await db.execute(query,params);
       if(rows.length===0) throw new ApiError(400,"Reached end of data!")
+
+      await redis.set(key,JSON.stringify(rows))
+      await redis.expire(key,60)
+
       return res.status(200).json(
         new ApiResponse(200,rows,"Fetched drug stock successfully!")
       )

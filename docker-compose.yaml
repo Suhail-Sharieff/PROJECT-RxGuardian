@@ -26,6 +26,10 @@ services:
     ## 
     volumes:
       - .:/app    
+  
+  # redis servie
+  rx_guardian_redis_service:
+    
 
 volumes:
   rx_guradian_docker_data:

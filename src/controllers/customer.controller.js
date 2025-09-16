@@ -4,6 +4,7 @@ import { asyncHandler } from "../Utils/asyncHandler.utils.js";
 import { db } from "../Utils/sql_connection.utils.js";
 import { buildPaginatedFilters } from "../Utils/paginated_query_builder.js";
 import { getShopImWorkingIn } from "./shop.controller.js";
+import { redis } from "../Utils/redis.connection.js";
 const createCustomer=asyncHandler(
     async(req,res)=>{
         try {
@@ -30,11 +31,21 @@ const getCutomerByPhone=asyncHandler(
                     { key: "searchByPhone", column: "phone", type: "string" },
                   ]
           });
+
+
+          const key=`getCutomerByPhone:${whereClause}:${params}:${limit}:${offset}`
+          const cache=await redis.get(key)
+          if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Get customerByPhone from redis "))
       
             const query=`select * from customer where 1=1 ${whereClause} limit ${limit} offset ${offset}`
             
             const [rows]=await db.execute(query,params);
-    
+
+
+          await redis.set(key,JSON.stringify(rows))
+          await redis.expire(key,30)
+
+
             return res.status(200).json(new ApiResponse(200,rows));
         } catch (error) {
             throw new ApiError(400,error.message)
@@ -48,6 +59,12 @@ const avgNumberOfTimesCustomerVisisted=asyncHandler
     async(req,res)=>{
         try{
             const shop_id=await getShopImWorkingIn(req,res);
+
+            const key=`avgNumberOfTimesCustomerVisisted:${shop_id}`
+            const cache=await redis.get(key)
+            if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetch avg times customer visited from redis!"))
+
+
             const query=`
            select avg(nTimesVisited) as avgNumberOfCustomerReVisisted,count(*) as total from 
             (select c.customer_id,c.name,
@@ -59,6 +76,9 @@ const avgNumberOfTimesCustomerVisisted=asyncHandler
             group by c.customer_id) as x`;
 
         const [rows]=await db.execute(query,[shop_id])
+
+          await redis.set(key,JSON.stringify(rows[0]))
+          await redis.expire(key,60)
 
             return res.status(200).json(new ApiResponse(200,rows[0],"Fetched avg freq vis!"))
 
@@ -95,6 +115,10 @@ const avgBasketSize = asyncHandler(async (req, res) => {
       ? { startDate: req.params.startDate, endDate: req.params.endDate || new Date().toISOString().slice(0, 10) }
       : defaultDateRange();
 
+    const key=`avgBasketSize:${shop_id}:${startDate}:${endDate}`
+    const cache=await redis.get(key)
+    if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetch avg basket sz from redis!"))
+
     const query = `
       SELECT AVG(sale_total) AS avgOrderValue
       FROM (
@@ -108,6 +132,10 @@ const avgBasketSize = asyncHandler(async (req, res) => {
     `;
 
     const [rows] = await db.execute(query, [shop_id, startDate, endDate]);
+
+    await redis.set(key,JSON.stringify(rows[0]))
+    await redis.expire(key,30)
+
     return res.status(200).json(new ApiResponse(200, rows[0], "Average basket size fetched"));
   } catch (err) {
     throw new ApiError(400, `Failed to fetch avg basket size: ${err.message}`);
@@ -148,6 +176,8 @@ const newVsReturning = asyncHandler(async (req, res) => {
       ? { startDate: req.params.startDate, endDate: req.params.endDate || new Date().toISOString().slice(0, 10) }
       : defaultDateRange();
 
+
+
     const query = `
       SELECT
         SUM(is_new) AS newCustomers,
@@ -164,6 +194,10 @@ const newVsReturning = asyncHandler(async (req, res) => {
     `;
 
     const [rows] = await db.execute(query, [startDate, endDate, shop_id]);
+
+
+
+
     return res.status(200).json(new ApiResponse(200, rows[0], "New vs returning customers fetched"));
   } catch (err) {
     throw new ApiError(400, `Failed to fetch new vs returning customers: ${err.message}`);
@@ -174,6 +208,10 @@ const newVsReturning = asyncHandler(async (req, res) => {
 const customerFrequencyDistribution = asyncHandler(async (req, res) => {
   try {
     const shop_id  = await getShopImWorkingIn(req, res);
+
+     const key=`customerFrequencyDistribution:${shop_id}`
+    const cache=await redis.get(key)
+    if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"customerFrequencyDistribution from redis!"))
 
     const query = `
       SELECT visit_count, COUNT(*) AS nCustomers
@@ -188,6 +226,10 @@ const customerFrequencyDistribution = asyncHandler(async (req, res) => {
     `;
 
     const [rows] = await db.execute(query, [shop_id]);
+
+    await redis.set(key,JSON.stringify(rows))
+    await redis.expire(key)
+
     return res.status(200).json(new ApiResponse(200, rows, "Customer frequency distribution fetched"));
   } catch (err) {
     throw new ApiError(400, `Failed to fetch customer frequency distribution: ${err.message}`);
@@ -206,6 +248,12 @@ const avgDaysBetweenCustomerPurchase = asyncHandler(async (req, res) => {
   try {
     const  shop_id  = await getShopImWorkingIn(req, res);
 
+
+    const key=`avgDaysBetweenCustomerPurchase:${shop_id}`
+    const cache=await redis.get(key)
+    if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"avgDaysBetweenCustomerPurchase from redis!"))
+
+
     const query = `
       select avg(avgDaysBetweenCustomerPurchase) as avg from (SELECT customer_id, AVG(days_between) AS avgDaysBetweenCustomerPurchase
       FROM (
@@ -220,6 +268,11 @@ const avgDaysBetweenCustomerPurchase = asyncHandler(async (req, res) => {
     `;
 
     const [rows] = await db.execute(query, [shop_id]);
+
+    await redis.set(key,JSON.stringify(rows))
+    await redis.expire(key,30)
+
+
     return res.status(200).json(new ApiResponse(200, rows, "Average days between purchases fetched"));
   } catch (err) {
     throw new ApiError(400, `Failed to fetch avg days between purchases: ${err.message}`);

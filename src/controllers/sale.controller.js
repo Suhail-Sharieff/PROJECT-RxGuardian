@@ -5,6 +5,7 @@ import { ApiResponse } from "../Utils/Api_Response.utils.js";
 import { getShopImWorkingIn } from "./shop.controller.js";
 
 import { buildPaginatedFilters } from "../Utils/paginated_query_builder.js";
+import { redis } from "../Utils/redis.connection.js";
 
 const initSale = asyncHandler(async (req, res) => {
   const { pharmacist_id } = req.pharmacist;
@@ -113,7 +114,15 @@ const getOverallSales=asyncHandler(
       limit ${limit} offset ${offset}
       `
 
+      const key=`getOverallSales:${whereClause}:${limit}:${offset}`
+      const cache=await redis.get(key)
+      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched overall sales from redis"))
+
+
       const [rows]=await db.execute(query,params);
+
+      await redis.set(key,JSON.stringify(rows))
+      await redis.expire(key,60)
 
       return res.status(200).json(new ApiResponse(200,rows,`Fetched sales !`))
       }catch(err){
@@ -129,6 +138,11 @@ const getDetailsOfSale=asyncHandler(
     try{
       const {sale_id}=req.params;
       if(!sale_id) throw new ApiError(400,'sale_id is missing!')
+
+      const key=`getDetailsOfSale:${sale_id}`
+      const cache=await redis.get(key)
+      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched from redis"))
+
     const query=
     `select d.drug_id,d.name,d.selling_price,si.quantity,p.pharmacist_id,p.name
     as sold_by,c.name as customer_name,c.phone as customer_phone  from
@@ -139,6 +153,10 @@ const getDetailsOfSale=asyncHandler(
     left join customer as c on sa.customer_id=c.customer_id
     where sa.sale_id=?`
     const [rows]=await db.execute(query,[sale_id])
+
+    await redis.set(key,JSON.stringify(rows))
+    await redis.expire(key,30)
+
     return res.status(200).json(new ApiResponse(200,rows));
 
     }catch(err){
@@ -161,6 +179,13 @@ const getDateVsRevenue=asyncHandler(
               { key: "day", column: "sa.date", type: "day" },
             ]
       });
+
+      
+      const key=`getDateVsRevenue:${whereClause}:${limit}:${offset}:${params}`
+      const cache=await redis.get(key)
+      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched date vs revenue from redis!"))
+
+
         const query=
         `select x.sold_on as date,sum(x.grand_total) as net_revenue from (select sa.sale_id,sa.shop_id,sa.date as sold_on,sum(d.selling_price*q.quantity) as total,sa.discount,
         sum(d.selling_price*q.quantity)-sa.discount as grand_total
@@ -175,7 +200,14 @@ const getDateVsRevenue=asyncHandler(
 `
 
       const [rows]=await db.execute(query,params);
-      return res.status(200).json(new ApiResponse(200,rows,"Fetched!"));
+
+
+      await redis.set(key,JSON.stringify(rows))
+      await redis.expire(key,60)
+
+
+
+      return res.status(200).json(new ApiResponse(200,rows,"Fetched date vs revenue!"));
       }catch(err){
         throw new ApiError(400,err.message);
       }
@@ -195,6 +227,11 @@ const  getDateVsSale=asyncHandler(
               { key: "day", column: "s.date", type: "day" },
             ]
       });
+
+      const key=`getDateVsSale:${whereClause}:${limit}:${offset}:${params}`
+      const cache=await redis.get(key)
+      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched date vs sale from redis!"))
+
       const query=`
       SELECT 
       DATE(s.date) AS sale_date,
@@ -208,6 +245,11 @@ const  getDateVsSale=asyncHandler(
       limit ${limit} offset ${offset}
       `
       const [rows]=await db.execute(query,params);
+
+      await redis.set(key,JSON.stringify(rows))
+      await redis.expire(key,60)
+
+
       return res.status(200).json(new ApiResponse(200,rows,"Fetched date vs sales"))
       }catch(err){throw new ApiError(400,err.message)}
   }
@@ -229,6 +271,11 @@ const discountUsage = asyncHandler(async (req, res) => {
       ? { startDate: req.params.startDate, endDate: req.params.endDate || new Date().toISOString().slice(0, 10) }
       : defaultDateRange();
 
+
+    const key=`discountUsage:${shop_id}:${startDate}:${endDate}`
+    const cache=await redis.get(key)
+    if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetch discount usage from redis!"))
+
     const query = `
       SELECT discount, COUNT(*) AS nSales, COALESCE(SUM(si.quantity * d.selling_price),0) AS revenue
       FROM sale s
@@ -241,6 +288,11 @@ const discountUsage = asyncHandler(async (req, res) => {
     `;
 
     const [rows] = await db.execute(query, [shop_id, startDate, endDate]);
+
+    await redis.set(key,JSON.stringify(rows))
+    await redis.expire(key,60)
+
+
     return res.status(200).json(new ApiResponse(200, rows, "Discount usage fetched"));
   } catch (err) {
     throw new ApiError(400, `Failed to fetch discount usage: ${err.message}`);

@@ -6,10 +6,13 @@ const db = createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  connectionLimit: 10,
+  connectionLimit: 20,
+  waitForConnections:true,
+  queueLimit:1,
   connectTimeout: 10000,
   multipleStatements: true, // because we execute multiple statements in init_queries
   port: process.env.DB_PORT,
+  database:process.env.DB_NAME
 }).promise();
 
 /*
@@ -45,7 +48,7 @@ const initDB = async (init_query) => {
     await connection.beginTransaction();
     await connection.query(init_query);
     await connection.commit();
-    console.log("✅ Database schema initialized successfully");
+    console.log("✅ Database schema initialized successfully ",);
   } catch (err) {
     console.error(
       "❌ Schema init failed, rolling back:",
