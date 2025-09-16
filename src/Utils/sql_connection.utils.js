@@ -3,16 +3,16 @@ import { createPool } from "mysql2";
 dotenv.config();
 
 const db = createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  host: process.env.MYSQL_HOST,
+  user:process.env.MYSQL_USER,
+  password: process.env.MYSQL_ROOT_PASSWORD,
   connectionLimit: 20,
   waitForConnections:true,
   queueLimit:1,
   connectTimeout: 10000,
   multipleStatements: true, // because we execute multiple statements in init_queries
-  port: process.env.DB_PORT,
-  database:process.env.DB_NAME
+  port: process.env.MYSQL_INTERNAL_PORT, 
+  database:process.env.MYSQL_DATABASE
 }).promise();
 
 /*

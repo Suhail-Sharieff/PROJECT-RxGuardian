@@ -8,7 +8,7 @@ const init_redis = async () => {
   try {
     if (!redis) {
       redis = createClient({
-        url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
+        url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_INTERNAL_PORT}`,
       });
 
       redis.on("error", (err) => {
