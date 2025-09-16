@@ -10,12 +10,17 @@ import 'controllers/setting_controller.dart';
 import 'firebase_options.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // It's crucial that controllers are put() before the app runs
-  Get.put(AuthController());
-  Get.put(SettingsController());
-  runApp(const MyApp());
+  try{
+    WidgetsFlutterBinding.ensureInitialized();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    // It's crucial that controllers are put() before the app runs
+    Get.put(AuthController());
+    Get.put(SettingsController());
+    runApp(const MyApp());
+  }catch(err){
+    Get.snackbar('Error', 'Please check your internet connection',backgroundColor: Colors.blue);
+    throw Exception("Failed to init app");
+  }
 }
 
 class MyApp extends StatelessWidget {

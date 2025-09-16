@@ -1,9 +1,9 @@
 
 import 'package:get/get_navigation/src/routes/get_route.dart';
-import 'package:rxGuardian/widgets/pharmacist_profile.dart';
 
 import '../pages/advanced_analysis.dart';
 import '../pages/billing_console.dart';
+import '../pages/drug_manufacturer_purchase.dart';
 import '../pages/drug_stock_details.dart';
 import '../pages/forgot_password_page.dart';
 import '../pages/hiring_console.dart';
@@ -16,6 +16,7 @@ import '../pages/shop_sale_details.dart';
 import '../pages/signup_page.dart';
 import '../pages/verify_email_page.dart';
 import '../pages/employee_details.dart';
+import '../widgets/pharmacist_profile.dart';
 import '../widgets/pharmacy_purchase_analysis.dart';
 
 const landing_route='/landing/';
@@ -35,6 +36,7 @@ const billing_console_route='/billingConsole/';
 const sale_details_route='/saleDetails/';
 const shop_registration_route='/registerForShop/';
 const performance_analysis_route='/advancedAnalysis';
+const drug_And_Manufacturer_route='/drugAndManufacturers';
 
 class AppPages {
   static final List<GetPage> pages = [
@@ -53,6 +55,7 @@ class AppPages {
     GetPage(name: billing_console_route, page: ()=>const BillingConsolePage()),
     GetPage(name: sale_details_route, page: ()=>const ShopSaleDetailsPage()),
     GetPage(name: shop_registration_route, page: ()=>const ShopRegistrationPage()),
-    GetPage(name:performance_analysis_route,page:()=>const PerformanceAnalysisPage())
+    GetPage(name:performance_analysis_route,page:()=>const PerformanceAnalysisPage()),
+    GetPage(name:drug_And_Manufacturer_route,page:()=>const DrugAndManufacturerPage())
   ];
 }

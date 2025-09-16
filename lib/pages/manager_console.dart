@@ -62,6 +62,16 @@ class ManagerConsolePage extends StatelessWidget {
                 Navigator.of(context).pushNamed(shop_purchase_analysis_route);
               },
             ),
+
+            FeatureCard(
+              icon: Icons.receipt_long_outlined,
+              title: 'Buy Stocks',
+              description: 'Buy essentials for your shop from trusted manufacturers',
+              onTap: () {
+                // TODO: Navigate to Sales Reports Page
+                Navigator.of(context).pushNamed(drug_And_Manufacturer_route);
+              },
+            ),
             // Placeholder for another manager feature
 
           ],
