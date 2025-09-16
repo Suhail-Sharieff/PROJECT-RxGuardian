@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyJWT } from "../middleware/auth.middleware.js";
-import { getAllDrugDetails, topRevenueDrugs, topSellingDrugs } from "../controllers/drug.controller.js";
+import { addDrugToStock, getAllDrugDetails, getDrugAndManufacturer, topRevenueDrugs, topSellingDrugs } from "../controllers/drug.controller.js";
 
 const drugRouter=Router()
 
@@ -21,7 +21,15 @@ drugRouter
 .route('/topRevenue')
 .get(topRevenueDrugs)
 
+drugRouter
+.route('/addDrugToStock')
+.put(addDrugToStock)
 
+
+
+drugRouter
+.route('/getDrugAndManufacturer')
+.get(getDrugAndManufacturer)
 
 
 export {drugRouter}

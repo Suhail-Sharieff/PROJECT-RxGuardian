@@ -140,7 +140,8 @@ const getShopImWorkingIn=
   async(req,res)=>{
     try{
       const {pharmacist_id}=req.pharmacist;
-
+      // console.log(`your pharmacist :${JSON.stringify(req.pharmacist)}`);
+      
       const key=`getShopImWorkingIn` 
       const cache=await redis.get(key)
       if(cache) return JSON.parse(cache)
@@ -156,7 +157,7 @@ const getShopImWorkingIn=
 
       return rows[0].shop_id;
     }catch(err){
-      throw new ApiError(400,"Failed to fetch shop you work in !")
+      throw new ApiError(400,`Failed to fetch shop you work in ERROR:${err.message}!`)
     }
   }
 const getShopNameImWorkingIn=
@@ -168,7 +169,7 @@ const getShopNameImWorkingIn=
 
       const key=`getShopNameImWorkingIn` 
       const cache=await redis.get(key)
-      if(cache) return res.status(200).json(JSON.parse(cache))
+      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched shop name i work from redis!"))
 
 
       const [rows]=await db.execute(`select name from shop where shop_id=?`,[shop_id]);

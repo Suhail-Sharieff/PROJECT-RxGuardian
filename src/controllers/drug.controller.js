@@ -1,6 +1,7 @@
 import { ApiError } from "../Utils/Api_Error.utils.js";
 import { ApiResponse } from "../Utils/Api_Response.utils.js";
 import { asyncHandler } from "../Utils/asyncHandler.utils.js";
+import { buildPaginatedFilters } from "../Utils/paginated_query_builder.js";
 import { redis } from "../Utils/redis.connection.js";
 import { db } from "../Utils/sql_connection.utils.js";
 import { getShopImWorkingIn } from "./shop.controller.js";
@@ -145,5 +146,92 @@ const topRevenueDrugs = asyncHandler(async (req, res) => {
 });
 
 
+const addDrugToStock=asyncHandler(
+  async(req,res)=>{
+    try{
+      const { drug_id, quantity } = req.body;
+        const numQuantity = parseInt(quantity, 10);
 
-export {getAllDrugDetails,topSellingDrugs,topRevenueDrugs}
+        if (!drug_id || !Number.isFinite(numQuantity) || numQuantity <= 0) {
+            throw new ApiError(400, "Drug ID must be provided and quantity must be a positive number.");
+        }
+
+        const shop_id = await getShopImWorkingIn(req, res); // Assuming this works and is secure
+        
+        // 2. Corrected SQL Query
+        const query = `
+            UPDATE quantity
+            SET quantity = quantity + ?
+            WHERE shop_id = ?
+            AND drug_id = ?
+        `;
+        
+        const [result] = await db.execute(query, [numQuantity, shop_id, drug_id]);
+
+        // 3. Handle Non-Existent Records, means no mediceine exists
+        if (result.affectedRows === 0) {
+           await db.execute('insert into quantity (drug_id,shop_id,quantity) values (?,?,?)',[drug_id,shop_id,quantity])
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, { updated: result.affectedRows }, `Successfully added ${numQuantity} units.`)
+        );
+    }catch(err){
+      throw new ApiError(400,err.message)
+    }
+
+  }
+)
+
+const getDrugAndManufacturer=asyncHandler(
+  async(req,res)=>{
+     try{
+      const shop_id=await getShopImWorkingIn(req,res);
+      const { limit, offset, whereClause, params } = buildPaginatedFilters({
+                   req,
+                   baseParams: [shop_id],
+                   allowedFilters: [
+                     { key: "searchManufacturer", column: "m.name", type: "string" },
+                     { key: "searchDrug", column: "d.name", type: "string" },
+                     { key: "searchDrugType", column: "d.type", type: "string" },
+                     { key: "searchBarcode", column: "d.barcode", type: "string" },
+                   ]
+           }); 
+     const query=
+     `
+     select d.drug_id,d.type,d.barcode,d.code,
+    d.cost_price,d.selling_price,
+    (d.selling_price-d.cost_price) as delta,
+    d.name as drug_name,ifnull(q.quantity,0) as curr_stock,m.name as manufacturer_name
+    from drug as d join manufacturer as m on m.manufacturer_id=d.manufacturer_id
+    left join quantity as q on q.drug_id=d.drug_id and q.shop_id=?
+    where 1=1 ${whereClause}
+    order by  type,delta desc
+    limit ${limit} offset ${offset}
+     `
+    
+     const key=`getDrugAndManufacturer:${whereClause}:${params}:${limit}:${offset}`
+     const cache=await redis.get(key)
+     if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched drug and manufacturers from redis!"))
+
+      const [rows]=await db.execute(query,params)
+
+
+
+
+      await redis.set(key,JSON.stringify(rows))
+      await redis.expire(key,60)
+
+      return res.status(200).json(new ApiResponse(200,rows,`Fetched drug and thier manufacturers!`))
+      
+     }catch(err){
+        throw new ApiError(400,`Failed to fetch drug and thier manufacturer ${err.message}`)
+     }
+
+
+
+  }
+)
+
+
+export {getAllDrugDetails,topSellingDrugs,topRevenueDrugs,addDrugToStock,getDrugAndManufacturer}
