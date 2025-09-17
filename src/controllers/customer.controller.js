@@ -156,7 +156,7 @@ const avgItemsPerSale = asyncHandler(async (req, res) => {
         SELECT s.sale_id, COALESCE(SUM(si.quantity),0) AS item_count
         FROM sale s
         LEFT JOIN sale_item si ON si.sale_id = s.sale_id
-        WHERE s.shop_id = ? AND s.date BETWEEN ? AND ?
+        WHERE s.shop_id = ? AND date(s.date) BETWEEN ? AND ?
         GROUP BY s.sale_id
       ) t;
     `;
@@ -185,7 +185,7 @@ const newVsReturning = asyncHandler(async (req, res) => {
       FROM (
         SELECT c.customer_id,
                MIN(s.date) AS firstSaleDate,
-               CASE WHEN MIN(s.date) BETWEEN ? AND ? THEN 1 ELSE 0 END AS is_new
+               CASE WHEN MIN(date(s.date)) BETWEEN ? AND ? THEN 1 ELSE 0 END AS is_new
         FROM sale s
         JOIN customer c ON c.customer_id = s.customer_id
         WHERE s.shop_id = ?

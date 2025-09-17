@@ -72,25 +72,27 @@ const defaultDateRange = () => {
 
 const topSellingDrugs = asyncHandler(async (req, res) => {
   try {
-    const  shop_id  = await getShopImWorkingIn(req, res);
-    const { startDate, endDate } = req.params.startDate
-      ? { startDate: req.params.startDate, endDate: req.params.endDate || new Date().toISOString().slice(0, 10) }
-      : defaultDateRange();
-    const limit = parseInt(req.params.limit || "10", 10);
-    // console.log(`${shop_id} ${startDate} ${endDate} ${limit}`);
-
-
-    const key=`topSellingDrugs:${shop_id}:${startDate}:${endDate}:${limit}`
-    const cache=await redis.get(key)
-    if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache)),"Fetched top selling drugs from redis!")
+    const shop_id = await getShopImWorkingIn(req, res);
     
+    const { startDate, endDate } = req.query.startDate
+      ? { startDate: req.query.startDate, endDate: req.query.endDate || new Date().toISOString().slice(0, 10) }
+      : defaultDateRange();
+    const limit = parseInt(req.query.limit || "10", 10);
+    
+    const key = `topSellingDrugs:${shop_id}:${startDate}:${endDate}:${limit}`;
+    const cache = await redis.get(key);
+    if (cache) {
+      return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Fetched top selling drugs from redis!"));
+    }
+
+    // FIX: Revert LIMIT to use the sanitized variable directly in the string
     const query = `
       SELECT d.drug_id, d.name, SUM(si.quantity) AS totalSold
       FROM sale_item si
       JOIN sale s ON s.sale_id = si.sale_id
       JOIN drug d ON d.drug_id = si.drug_id
       WHERE s.shop_id = ?
-        AND s.date BETWEEN ? AND ?
+        AND date(s.date) BETWEEN ? AND ?
       GROUP BY d.drug_id
       ORDER BY totalSold DESC
       LIMIT ${limit};
@@ -98,46 +100,49 @@ const topSellingDrugs = asyncHandler(async (req, res) => {
 
     const [rows] = await db.execute(query, [shop_id, startDate, endDate]);
 
-    await redis.set(key,JSON.stringify(rows))
-    await redis.expire(key,30)
+    await redis.set(key, JSON.stringify(rows));
+    await redis.expire(key, 30);
 
     return res.status(200).json(new ApiResponse(200, rows, "Top selling drugs fetched"));
   } catch (err) {
     throw new ApiError(400, `Failed to fetch top selling drugs: ${err.message}`);
   }
 });
-
-
 const topRevenueDrugs = asyncHandler(async (req, res) => {
   try {
-    const  shop_id  = await getShopImWorkingIn(req, res);
-    const { startDate, endDate } = req.params.startDate
-      ? { startDate: req.params.startDate, endDate: req.params.endDate || new Date().toISOString().slice(0, 10) }
+    const shop_id = await getShopImWorkingIn(req, res);
+
+    const { startDate, endDate } = req.query.startDate
+      ? { startDate: req.query.startDate, endDate: req.query.endDate || new Date().toISOString().slice(0, 10) }
       : defaultDateRange();
-    const limit = parseInt(req.params.limit || "10", 10);
-
-
-     const key=`topRevenueDrugs:${shop_id}:${startDate}:${endDate}:${limit}`
-    const cache=await redis.get(key)
-    if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache)),"Fetched top revenue drugs from redis!")
-
+    // This line already makes the limit value safe
+    const limit = parseInt(req.query.limit || "10", 10);
+    
+    // ... (caching code is correct) ...
+    const key = `topRevenueDrugs:${shop_id}:${startDate}:${endDate}:${limit}`;
+    const cache = await redis.get(key);
+    if (cache) {
+      return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Fetched top revenue drugs from redis!"));
+    }
+    
+    // FIX: Revert LIMIT to use the sanitized variable directly in the string
     const query = `
       SELECT d.drug_id, d.name, SUM(si.quantity * d.selling_price) AS revenue
       FROM sale_item si
       JOIN sale s ON s.sale_id = si.sale_id
       JOIN drug d ON d.drug_id = si.drug_id
       WHERE s.shop_id = ?
-        AND s.date BETWEEN ? AND ?
+        AND date(s.date) BETWEEN ? AND ?
       GROUP BY d.drug_id
       ORDER BY revenue DESC
       LIMIT ${limit};
     `;
 
+    // FIX: Remove 'limit' from the parameters array
     const [rows] = await db.execute(query, [shop_id, startDate, endDate]);
 
-    await redis.set(key,JSON.stringify(rows))
-    await redis.expire(key,30)
-
+    await redis.set(key, JSON.stringify(rows));
+    await redis.expire(key, 30);
 
     return res.status(200).json(new ApiResponse(200, rows, "Top revenue drugs fetched"));
   } catch (err) {
@@ -145,7 +150,7 @@ const topRevenueDrugs = asyncHandler(async (req, res) => {
   }
 });
 
-//--imp: used transaction here coz whenver we buy some stocks of drug from manufacturer ie addDrugToStaock, then step1:increase the quantity of that drug in our shop, step2:deduct by thatmuch amount from our shopBalance only after checking if that much money is available with us, if any one of these steps fails, we need to cancel whole step, so we use transaction
+//--imp: used transaction here coz whenver we buy some stocks of drug from manufacturer ie addDrugToStaock, then step1:increase the quantity of that drug in our shop, step2:deduct by thatmuch amount from our shopBalance only after checking if that much money is available with us, if any one of these steps fails, we need to cancel whole step, so we use transaction using ACID(atomicity,consistency,independence,durable)
 const addDrugToStock = asyncHandler(async (req, res) => {
   const connection = await db.getConnection(); // start with a connection
   try {
@@ -172,7 +177,7 @@ const addDrugToStock = asyncHandler(async (req, res) => {
 
     // 2. Fetch shop balance
     const [[shopBalance]] = await connection.execute(
-      `SELECT balance FROM balance WHERE shop_id = ? FOR UPDATE`, // 🔒 row lock
+      `SELECT balance FROM balance WHERE shop_id = ? FOR UPDATE`, // 🔒 `FOR UPDATE` means row lock, meaning only 1 thread can access it at a time
       [shop_id]
     );
     if (!shopBalance) throw new ApiError(404, `Balance for shop_id=${shop_id} not found`);
