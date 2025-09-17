@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -205,6 +206,27 @@ class DrugAndManufacturerController extends GetxController {
           // 3. This assignment triggers GetX to update the UI.
           drugs[index] = newDrug;
         }
+
+        url=Uri.http(main_uri,'/shop/deductBalance');
+        res = await http.patch(
+          url,
+          headers: {
+            'authorization': 'Bearer $accessToken',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'money':drugs[index].sellingPrice-drugs[index].costPrice
+          }),
+        );
+        // log('deducting ${drugs[index].sellingPrice-drugs[index].costPrice}');
+        if(res.statusCode==200) {
+          Get.snackbar('Note','Deducted ${drugs[index].sellingPrice-drugs[index].costPrice} from shop balance');
+        }else{
+          Get.snackbar('Error', 'Failed to purchase',backgroundColor: Colors.red);
+          throw Exception(
+            'Failed to load drugs: ${jsonDecode(res.body)['message']}',
+          );
+        }
         return;
         // --- END REPLACEMENT LOGIC ---
       } else {
@@ -212,6 +234,9 @@ class DrugAndManufacturerController extends GetxController {
           'Failed to load drugs: ${jsonDecode(res.body)['message']}',
         );
       }
+
+
+
     } catch (e) {
       throw Exception('An error occurred: ${e.toString()}');
     }

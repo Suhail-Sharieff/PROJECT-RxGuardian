@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -401,6 +402,30 @@ class BillingUIController extends GetxController {
         'grand_total': grandTotal,
         'date': DateTime.now()
       };
+
+
+      final accessToken=Get.find<AuthController>().accessToken;
+      var url=Uri.http(main_uri,'/shop/addBalance');
+      var res = await http.patch(
+        url,
+        headers: {
+          'authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'money': grandTotal}),
+      );
+      final decodedBody = jsonDecode(res.body);
+      // log(res.body);
+      if (res.statusCode == 200) {
+        final insertId = decodedBody['data']['insertId'];
+        if (insertId != null) {
+          return;
+        } else {
+          throw Exception('API did not return an insertId for adding balance!.');
+        }
+      } else {
+        throw Exception('Failed to add balance: ${decodedBody['message']}');
+      }
 
     } catch(e) {
       Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''), backgroundColor: kErrorColor, colorText: Colors.white);
