@@ -191,7 +191,8 @@ class DrugAndManufacturerController extends GetxController {
           'quantity': quantity,
         }),
       );
-
+      int idx=drugs.indexWhere((e)=>e.drugId==drugId);
+      log('Total for ${quantity} =${quantity*(drugs[idx].sellingPrice-drugs[idx].costPrice)}');
       if (res.statusCode == 200) {
         // --- REPLACEMENT LOGIC ---
         // 1. Find the index of the drug to update.
@@ -207,26 +208,6 @@ class DrugAndManufacturerController extends GetxController {
           drugs[index] = newDrug;
         }
 
-        url=Uri.http(main_uri,'/shop/deductBalance');
-        res = await http.patch(
-          url,
-          headers: {
-            'authorization': 'Bearer $accessToken',
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({
-            'money':drugs[index].sellingPrice-drugs[index].costPrice
-          }),
-        );
-        // log('deducting ${drugs[index].sellingPrice-drugs[index].costPrice}');
-        if(res.statusCode==200) {
-          Get.snackbar('Note','Deducted ${drugs[index].sellingPrice-drugs[index].costPrice} from shop balance');
-        }else{
-          Get.snackbar('Error', 'Failed to purchase',backgroundColor: Colors.red);
-          throw Exception(
-            'Failed to load drugs: ${jsonDecode(res.body)['message']}',
-          );
-        }
         return;
         // --- END REPLACEMENT LOGIC ---
       } else {
