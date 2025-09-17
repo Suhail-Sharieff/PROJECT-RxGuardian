@@ -47,7 +47,7 @@ const initSale = asyncHandler(async (req, res) => {
     const values = items.flatMap((it) => [sale_id, it.drug_id, it.quantity]);
     const insertQuery = `INSERT INTO sale_item (sale_id, drug_id, quantity) VALUES ${placeholders}`;
 
-    console.log(`place holder to insert are: ${placeholders}`);
+    // console.log(`place holder to insert are: ${placeholders}`);
 
     const [itemsResult] = await db.execute(insertQuery, values);
 

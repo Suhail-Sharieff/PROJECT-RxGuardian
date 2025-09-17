@@ -145,43 +145,81 @@ const topRevenueDrugs = asyncHandler(async (req, res) => {
   }
 });
 
+//--imp: used transaction here coz whenver we buy some stocks of drug from manufacturer ie addDrugToStaock, then step1:increase the quantity of that drug in our shop, step2:deduct by thatmuch amount from our shopBalance only after checking if that much money is available with us, if any one of these steps fails, we need to cancel whole step, so we use transaction
+const addDrugToStock = asyncHandler(async (req, res) => {
+  const connection = await db.getConnection(); // start with a connection
+  try {
+    await connection.beginTransaction(); // 🚀 start transaction
 
-const addDrugToStock=asyncHandler(
-  async(req,res)=>{
-    try{
-      const { drug_id, quantity } = req.body;
-        const numQuantity = parseInt(quantity, 10);
+    const { drug_id, quantity } = req.body;
+    const numQuantity = parseInt(quantity, 10);
 
-        if (!drug_id || !Number.isFinite(numQuantity) || numQuantity <= 0) {
-            throw new ApiError(400, "Drug ID must be provided and quantity must be a positive number.");
-        }
-
-        const shop_id = await getShopImWorkingIn(req, res); // Assuming this works and is secure
-        
-        // 2. Corrected SQL Query
-        const query = `
-            UPDATE quantity
-            SET quantity = quantity + ?
-            WHERE shop_id = ?
-            AND drug_id = ?
-        `;
-        
-        const [result] = await db.execute(query, [numQuantity, shop_id, drug_id]);
-
-        // 3. Handle Non-Existent Records, means no mediceine exists
-        if (result.affectedRows === 0) {
-           await db.execute('insert into quantity (drug_id,shop_id,quantity) values (?,?,?)',[drug_id,shop_id,quantity])
-        }
-
-        return res.status(200).json(
-            new ApiResponse(200, { updated: result.affectedRows }, `Successfully added ${numQuantity} units.`)
-        );
-    }catch(err){
-      throw new ApiError(400,err.message)
+    if (!drug_id || !Number.isFinite(numQuantity) || numQuantity <= 0) {
+      throw new ApiError(400, `Invalid input: drug_id=${drug_id}, quantity=${quantity}`);
     }
 
+    const shop_id = await getShopImWorkingIn(req, res);
+
+    // 1. Fetch drug prices
+    const [[drug]] = await connection.execute(
+      `SELECT cost_price, selling_price FROM drug WHERE drug_id = ?`,
+      [drug_id]
+    );
+    if (!drug) throw new ApiError(404, `Drug with id=${drug_id} not found`);
+
+    const { cost_price } = drug;
+    const totalCost = cost_price * numQuantity;
+
+    // 2. Fetch shop balance
+    const [[shopBalance]] = await connection.execute(
+      `SELECT balance FROM balance WHERE shop_id = ? FOR UPDATE`, // 🔒 row lock
+      [shop_id]
+    );
+    if (!shopBalance) throw new ApiError(404, `Balance for shop_id=${shop_id} not found`);
+
+    if (shopBalance.balance < totalCost) {
+      throw new ApiError(
+        400,
+        `Insufficient balance: needed ${totalCost}, available ${shopBalance.balance}`
+      );
+    }
+
+    // 3. Deduct balance
+    await connection.execute(
+      `UPDATE balance SET balance = balance - ? WHERE shop_id = ?`,
+      [totalCost, shop_id]
+    );
+
+    // 4. Update or insert stock
+    const [result] = await connection.execute(
+      `UPDATE quantity SET quantity = quantity + ? WHERE shop_id = ? AND drug_id = ?`,
+      [numQuantity, shop_id, drug_id]
+    );
+
+    if (result.affectedRows === 0) {
+      await connection.execute(
+        `INSERT INTO quantity (drug_id, shop_id, quantity) VALUES (?, ?, ?)`,
+        [drug_id, shop_id, numQuantity]
+      );
+    }
+
+    await connection.commit(); // ✅ commit transaction
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        { updated: result.affectedRows },
+        `Successfully added ${numQuantity} units of drug_id=${drug_id}`
+      )
+    );
+  } catch (err) {
+    await connection.rollback(); // ❌ rollback on error
+    throw new ApiError(400, err.message);
+  } finally {
+    connection.release(); // always release back to pool
   }
-)
+});
+
 
 const getDrugAndManufacturer=asyncHandler(
   async(req,res)=>{

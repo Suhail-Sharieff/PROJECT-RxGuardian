@@ -299,6 +299,10 @@ const deductBalance = asyncHandler(
 
       const shop_id = await getShopImWorkingIn(req, res)
 
+      const temp=`select balance from balance where shop_id=? limit 1`
+      const [tr]=await db.execute(temp,[shop_id])
+      const currBalance=tr[0].balance
+      if(currBalance<money) throw new ApiError(400,`Insufficient balance. Demand=${money}, but balance=${currBalance}`)    
       
 
       const query = `update balance set balance=balance-? where shop_id=?`
