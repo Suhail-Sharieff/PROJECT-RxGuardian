@@ -133,6 +133,18 @@ CREATE TABLE IF NOT EXISTS quantity (
 );
 
 -- ===============================
+-- Balance Table
+-- ===============================
+create table if not exists balance (
+shop_id int not null,
+balance double not null default 0,
+foreign key(shop_id) references shop(shop_id) on delete cascade
+);
+
+
+
+
+-- ===============================
 -- Triggers
 -- ===============================
 
@@ -189,6 +201,18 @@ BEGIN
     INSERT INTO salary (salary, emp_id)
     VALUES (0, NEW.emp_id);
 END;
+
+
+
+-- Whenever a shop is created, set its balance to 0
+DROP TRIGGER IF EXISTS trg_after_shop_insert_into_balance;
+create trigger trg_after_shop_insert_into_balance
+after insert on shop
+for each row
+begin
+   insert into balance(shop_id) values (new.shop_id);
+end;
+
 `;
 
 export { init_query };
