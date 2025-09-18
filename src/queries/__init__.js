@@ -213,6 +213,115 @@ begin
    insert into balance(shop_id) values (new.shop_id);
 end;
 
+-- ===============================
+-- Chat System Tables
+-- ===============================
+
+-- Chat Rooms Table
+CREATE TABLE IF NOT EXISTS chat_rooms (
+    room_id INT PRIMARY KEY AUTO_INCREMENT,
+    room_name VARCHAR(100) NOT NULL,
+    room_type ENUM('general', 'shop', 'private') DEFAULT 'general',
+    shop_id INT NULL,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (shop_id) REFERENCES shop(shop_id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES pharmacist(pharmacist_id) ON DELETE CASCADE
+);
+
+-- Chat Messages Table
+CREATE TABLE IF NOT EXISTS chat_messages (
+    message_id INT PRIMARY KEY AUTO_INCREMENT,
+    room_id INT NOT NULL,
+    sender_id INT NOT NULL,
+    message_text TEXT NOT NULL,
+    message_type ENUM('text', 'image', 'file', 'system') DEFAULT 'text',
+    file_url VARCHAR(500) NULL,
+    file_name VARCHAR(255) NULL,
+    file_size INT NULL,
+    reply_to_message_id INT NULL,
+    is_edited BOOLEAN DEFAULT FALSE,
+    edited_at TIMESTAMP NULL,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (room_id) REFERENCES chat_rooms(room_id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES pharmacist(pharmacist_id) ON DELETE CASCADE,
+    FOREIGN KEY (reply_to_message_id) REFERENCES chat_messages(message_id) ON DELETE SET NULL
+);
+
+-- Chat Room Members Table
+CREATE TABLE IF NOT EXISTS chat_room_members (
+    member_id INT PRIMARY KEY AUTO_INCREMENT,
+    room_id INT NOT NULL,
+    pharmacist_id INT NOT NULL,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_admin BOOLEAN DEFAULT FALSE,
+    is_muted BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    UNIQUE KEY unique_room_member (room_id, pharmacist_id),
+    FOREIGN KEY (room_id) REFERENCES chat_rooms(room_id) ON DELETE CASCADE,
+    FOREIGN KEY (pharmacist_id) REFERENCES pharmacist(pharmacist_id) ON DELETE CASCADE
+);
+
+-- Online Users Table (for tracking who's online)
+CREATE TABLE IF NOT EXISTS online_users (
+    pharmacist_id INT PRIMARY KEY,
+    socket_id VARCHAR(100) NOT NULL,
+    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('online', 'away', 'busy', 'invisible') DEFAULT 'online',
+    current_room_id INT NULL,
+    FOREIGN KEY (pharmacist_id) REFERENCES pharmacist(pharmacist_id) ON DELETE CASCADE,
+    FOREIGN KEY (current_room_id) REFERENCES chat_rooms(room_id) ON DELETE SET NULL
+);
+
+-- Typing Indicators Table
+CREATE TABLE IF NOT EXISTS typing_indicators (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    room_id INT NOT NULL,
+    pharmacist_id INT NOT NULL,
+    is_typing BOOLEAN DEFAULT TRUE,
+    started_typing_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (room_id) REFERENCES chat_rooms(room_id) ON DELETE CASCADE,
+    FOREIGN KEY (pharmacist_id) REFERENCES pharmacist(pharmacist_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_typing (room_id, pharmacist_id)
+);
+
+-- Message Reactions Table
+CREATE TABLE IF NOT EXISTS message_reactions (
+    reaction_id INT PRIMARY KEY AUTO_INCREMENT,
+    message_id INT NOT NULL,
+    pharmacist_id INT NOT NULL,
+    emoji VARCHAR(10) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_reaction (message_id, pharmacist_id),
+    FOREIGN KEY (message_id) REFERENCES chat_messages(message_id) ON DELETE CASCADE,
+    FOREIGN KEY (pharmacist_id) REFERENCES pharmacist(pharmacist_id) ON DELETE CASCADE
+);
+
+-- Message Read Status Table
+CREATE TABLE IF NOT EXISTS message_read_status (
+    read_id INT PRIMARY KEY AUTO_INCREMENT,
+    message_id INT NOT NULL,
+    pharmacist_id INT NOT NULL,
+    read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_read (message_id, pharmacist_id),
+    FOREIGN KEY (message_id) REFERENCES chat_messages(message_id) ON DELETE CASCADE,
+    FOREIGN KEY (pharmacist_id) REFERENCES pharmacist(pharmacist_id) ON DELETE CASCADE
+);
+
+-- Create indexes for better performance
+
+
+-- Create default general chat room (only if no rooms exist)
+INSERT IGNORE INTO chat_rooms (room_id, room_name, room_type, created_by) 
+SELECT 1, 'General Chat', 'general', 1
+WHERE NOT EXISTS (SELECT 1 FROM chat_rooms WHERE room_id = 1);
+
 `;
 
 export { init_query };
