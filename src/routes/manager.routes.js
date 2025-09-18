@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 import { verifyManagerAccess } from "../middleware/manager_chk.middleware.js";
-import { addEmployee, getAllEmployables, getEmployeeDetails, hirePharmacist, isManager,  removeEmployee, updateEmployeeSalary } from "../controllers/manager.controller.js";
+import { addEmployee, getAllEmployables, getEmployeeDetails, getEmployeesOfMyShop, hirePharmacist, isManager,  removeEmployee, updateEmployeeSalary } from "../controllers/manager.controller.js";
 
 
 const managerRouter=Router()
@@ -37,6 +37,10 @@ managerRouter
 .route('/hirePharmacist')
 .patch(hirePharmacist);
 
+
+managerRouter
+.route('/getEmployeesOfMyShop')
+.get(getEmployeesOfMyShop)
 
 
 

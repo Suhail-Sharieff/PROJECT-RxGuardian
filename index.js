@@ -21,7 +21,7 @@ const startServer = async () => {
     
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ SERVER RUNNING: http://localhost:${PORT}`);
-      console.log(`✅ SOCKET.IO ENABLED`);
+      console.log(`✅ SOCKET.IO ENABLED AT ${JSON.stringify(server.address())}`);
     });
   } catch (err) {
     console.error("❌ SERVER ERROR:", err.message);
