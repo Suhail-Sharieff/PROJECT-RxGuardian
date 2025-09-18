@@ -82,7 +82,8 @@ Currently, this is an **MVP** (Minimum Viable Product). Many more advanced featu
   <img src="https://github.com/user-attachments/assets/0cdc7e87-4293-406e-827c-f201caffb421" width="32%" />
 </p>
 <p>
-<img src="https://github.com/user-attachments/assets/04278483-ea17-403e-b5d8-5cdb69882b37" width="1900"  />
+<img src="https://github.com/user-attachments/assets/04278483-ea17-403e-b5d8-5cdb69882b37" width="32%"  />
+<img src="https://github.com/user-attachments/assets/2b22499d-0b83-4009-be87-f4b9d52d5bfd" width="32%"/>
 
 </p>
 
@@ -107,5 +108,6 @@ Currently, this is an **MVP** (Minimum Viable Product). Many more advanced featu
 
 ## 👨‍💻 Contributors
 - Built with ❤️ by **Suhail**
+
 
 
