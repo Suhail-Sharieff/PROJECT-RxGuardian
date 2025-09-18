@@ -22,7 +22,7 @@ class ChatMessage {
   final String messageText;
   final DateTime createdAt;
   final bool isOwnMessage;
-
+  final RxList<MessageReaction> reactions;
   ChatMessage({
     required this.messageId,
     required this.roomId,
@@ -31,9 +31,17 @@ class ChatMessage {
     required this.messageText,
     required this.createdAt,
     this.isOwnMessage = false,
-  });
-
+    List<MessageReaction>? initialReactions, // <-- ADD THIS
+  }) : reactions = (initialReactions ?? []).obs;
   factory ChatMessage.fromJson(Map<String, dynamic> json, int currentUserId) {
+    // Parse the list of reactions from the API response
+    var reactionsList = <MessageReaction>[];
+    if (json['reactions'] != null) {
+      reactionsList = (json['reactions'] as List)
+          .map((r) => MessageReaction.fromJson(r))
+          .toList();
+    }
+
     return ChatMessage(
       messageId: json['message_id'],
       roomId: json['room_id'],
@@ -42,16 +50,17 @@ class ChatMessage {
       messageText: json['message_text'] ?? '',
       createdAt: DateTime.parse(json['created_at']),
       isOwnMessage: json['sender_id'] == currentUserId,
+      initialReactions: reactionsList, // <-- PASS THE PARSED LIST
     );
   }
 }
-
 class ChatRoom {
   final int roomId;
   final String roomName;
   final String? lastMessage;
   final DateTime? lastMessageTime;
   final String? lastMessageSenderName;
+  final int unreadCount; // <-- ADD THIS LINE
 
   ChatRoom({
     required this.roomId,
@@ -59,6 +68,7 @@ class ChatRoom {
     this.lastMessage,
     this.lastMessageTime,
     this.lastMessageSenderName,
+    this.unreadCount = 0, // <-- ADD THIS with a default value
   });
 
   factory ChatRoom.fromJson(Map<String, dynamic> json) {
@@ -70,11 +80,11 @@ class ChatRoom {
           ? DateTime.parse(json['last_message_time'])
           : null,
       lastMessageSenderName: json['last_message_sender_name'],
+      // Parse the new field from the API response
+      unreadCount: json['unread_count'] ?? 0, // <-- ADD THIS LINE
     );
   }
 }
-
-
 class RoomMember {
   final int pharmacistId;
   final String name;
@@ -198,7 +208,29 @@ class ChatController extends GetxController {
     }
   }
 
+  // In ChatController
   void selectRoom(ChatRoom room) {
+    // 1. Tell the server that we are now reading this room
+    socket.emit('mark_room_as_read', {'room_id': room.roomId});
+
+    // 2. Update the UI instantly (Optimistic Update)
+    // Find the room in the list and set its unread count to 0
+    final index = rooms.indexWhere((r) => r.roomId == room.roomId);
+    if (index != -1 && rooms[index].unreadCount > 0) {
+      // Create a new instance with the updated count
+      rooms[index] = ChatRoom(
+          roomId: room.roomId,
+          roomName: room.roomName,
+          lastMessage: room.lastMessage,
+          lastMessageTime: room.lastMessageTime,
+          lastMessageSenderName: room.lastMessageSenderName,
+          unreadCount: 0 // Set to 0
+      );
+      // Notify GetX that the list has changed
+      rooms.refresh();
+    }
+
+    // 3. Proceed to open the chat room
     selectedRoom.value = room;
     Get.put(ChatRoomController(room: room), tag: room.roomId.toString());
   }
@@ -245,7 +277,22 @@ class ChatRoomController extends GetxController {
     fetchRoomMembers(); // Fetch members when entering the room
     _setupSocketListeners();
   }
+  // In ChatRoomController
+  void addReaction(int messageId, String emoji) {
+    _chatController.socket.emit('add_reaction', {
+      'message_id': messageId,
+      'emoji': emoji,
+      'room_id': room.roomId,
+    });
+    // Note: We will handle the UI update in the listener to ensure consistency.
+  }
 
+  void removeReaction(int messageId) {
+    _chatController.socket.emit('remove_reaction', {
+      'message_id': messageId,
+      'room_id': room.roomId,
+    });
+  }
   Future<void> _joinRoomAndFetchMessages() async {
     try {
       isLoadingMessages.value = true;
@@ -300,6 +347,38 @@ class ChatRoomController extends GetxController {
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
         );
+      }
+    });
+
+    // NEW: Listen for added reactions
+    _chatController.socket.on('reaction_added', (data) {
+      final int messageId = data['message_id'];
+      final int reactingUserId = data['pharmacist_id'];
+      final newReaction = MessageReaction(
+        pharmacistId: reactingUserId,
+        pharmacistName: data['name'],
+        emoji: data['emoji'],
+      );
+
+      // Find the message in the list
+      final message = messages.firstWhereOrNull((m) => m.messageId == messageId);
+      if (message != null) {
+        // Remove any previous reaction from this user, then add the new one
+        message.reactions.removeWhere((r) => r.pharmacistId == reactingUserId);
+        message.reactions.add(newReaction);
+      }
+    });
+
+    // NEW: Listen for removed reactions
+    _chatController.socket.on('reaction_removed', (data) {
+      final int messageId = data['message_id'];
+      final int reactingUserId = data['pharmacist_id'];
+
+      // Find the message in the list
+      final message = messages.firstWhereOrNull((m) => m.messageId == messageId);
+      if (message != null) {
+        // Remove the reaction from this user
+        message.reactions.removeWhere((r) => r.pharmacistId == reactingUserId);
       }
     });
   }
@@ -635,10 +714,9 @@ class RoomListView extends StatelessWidget {
             }
             return ListView.builder(
               itemCount: controller.rooms.length,
+              // In RoomListView -> ListView.builder
               itemBuilder: (context, index) {
                 final room = controller.rooms[index];
-                final lastMessage = room.lastMessage ?? 'No messages yet.';
-                final senderName = room.lastMessageSenderName != null ? '${room.lastMessageSenderName}: ' : '';
                 final isSelected = controller.selectedRoom.value?.roomId == room.roomId;
 
                 return Container(
@@ -655,16 +733,39 @@ class RoomListView extends StatelessWidget {
                     ),
                     title: Text(room.roomName, style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(
-                      '$senderName$lastMessage',
+                      '${room.lastMessageSenderName != null ? '${room.lastMessageSenderName}: ' : ''}${room.lastMessage ?? 'No messages yet.'}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    trailing: room.lastMessageTime != null
-                        ? Text(
-                      formatTimestamp(room.lastMessageTime!),
-                      style: TextStyle(fontSize: 12, color: theme.textTheme.bodyMedium?.color),
-                    )
-                        : null,
+                    // --- 👇 UPDATE THE trailing WIDGET LIKE THIS ---
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (room.lastMessageTime != null)
+                          Text(
+                            formatTimestamp(room.lastMessageTime!),
+                            style: TextStyle(fontSize: 12, color: theme.textTheme.bodyMedium?.color),
+                          ),
+                        const SizedBox(height: 4),
+                        // --- THIS IS THE NEW UNREAD BADGE ---
+                        if (room.unreadCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: theme.primaryColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              room.unreadCount.toString(),
+                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          )
+                        else
+                        // Use a placeholder to keep alignment consistent when there's no badge
+                          const SizedBox(height: 18),
+                      ],
+                    ),
                     onTap: () => controller.selectRoom(room),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -762,9 +863,50 @@ class ChatRoomView extends StatelessWidget {
   }
 }
 
+// Assuming your data models (ChatMessage, etc.) and controllers are imported correctly.
+// Also assuming AppColors is defined as in previous examples.
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
   const MessageBubble({super.key, required this.message});
+
+  // Helper method to show the reaction dialog
+  void _showReactionDialog(BuildContext context) {
+    // HERE IS THE FIX 👇
+    final controller = Get.find<ChatRoomController>(tag: message.roomId.toString());
+
+    final List<String> emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+    final int? currentUserId = Get.find<AuthController>().user.value?.id;
+    final hasUserReacted = message.reactions.any((r) => r.pharmacistId == currentUserId);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('React to message'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Wrap(
+          spacing: 8.0,
+          alignment: WrapAlignment.center,
+          children: emojis.map((emoji) => IconButton(
+            icon: Text(emoji, style: const TextStyle(fontSize: 24)),
+            onPressed: () {
+              controller.addReaction(message.messageId, emoji);
+              Get.back();
+            },
+          )).toList(),
+        ),
+        actions: [
+          if (hasUserReacted)
+            TextButton(
+              child: const Text('Remove Reaction', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                controller.removeReaction(message.messageId);
+                Get.back();
+              },
+            ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -772,55 +914,89 @@ class MessageBubble extends StatelessWidget {
     final isOwn = message.isOwnMessage;
     final isDark = theme.brightness == Brightness.dark;
 
-    return Align(
-      alignment: isOwn ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
-        margin: const EdgeInsets.symmetric(vertical: 5),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-        decoration: BoxDecoration(
-          color: isOwn
-              ? AppColors.ownMessageBubble
-              : (isDark ? AppColors.otherMessageBubbleDark : AppColors.otherMessageBubbleLight),
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: isOwn ? const Radius.circular(20) : const Radius.circular(4),
-            bottomRight: isOwn ? const Radius.circular(4) : const Radius.circular(20),
+    return GestureDetector(
+      onLongPress: () => _showReactionDialog(context),
+      onSecondaryTap: () => _showReactionDialog(context),
+      child: Align(
+        alignment: isOwn ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+          margin: const EdgeInsets.symmetric(vertical: 5),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+          decoration: BoxDecoration(
+            color: isOwn
+                ? AppColors.ownMessageBubble
+                : (isDark ? AppColors.otherMessageBubbleDark : AppColors.otherMessageBubbleLight),
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(20),
+              topRight: const Radius.circular(20),
+              bottomLeft: isOwn ? const Radius.circular(20) : const Radius.circular(4),
+              bottomRight: isOwn ? const Radius.circular(4) : const Radius.circular(20),
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: isOwn ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            if (!isOwn)
+          child: Column(
+            crossAxisAlignment: isOwn ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              if (!isOwn)
+                Text(
+                  message.senderName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                    fontSize: 13,
+                  ),
+                ),
+              if (!isOwn) const SizedBox(height: 4),
               Text(
-                message.senderName,
+                message.messageText,
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                  fontSize: 13,
+                  color: isOwn ? Colors.white : theme.textTheme.bodyLarge?.color,
                 ),
               ),
-            if(!isOwn) const SizedBox(height: 4),
-            Text(
-              message.messageText,
-              style: TextStyle(
-                color: isOwn
-                    ? Colors.white
-                    : theme.textTheme.bodyLarge?.color,
+              const SizedBox(height: 5),
+              Text(
+                DateFormat('h:mm a').format(message.createdAt.toLocal()),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isOwn ? Colors.white70 : theme.textTheme.bodyMedium?.color,
+                ),
               ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              DateFormat('h:mm a').format(message.createdAt.toLocal()),
-              style: TextStyle(
-                fontSize: 10,
-                color: isOwn
-                    ? Colors.white70
-                    : theme.textTheme.bodyMedium?.color,
-              ),
-            ),
-          ],
+              Obx(() {
+                if (message.reactions.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                final reactionSummary = <String, int>{};
+                for (var reaction in message.reactions) {
+                  reactionSummary[reaction.emoji] = (reactionSummary[reaction.emoji] ?? 0) + 1;
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Wrap(
+                    spacing: 6.0,
+                    runSpacing: 4.0,
+                    alignment: isOwn ? WrapAlignment.end : WrapAlignment.start,
+                    children: reactionSummary.entries.map((entry) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                            color: isOwn ? Colors.white.withOpacity(0.2) : theme.scaffoldBackgroundColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: isOwn ? Colors.transparent : theme.dividerColor)
+                        ),
+                        child: Text(
+                          '${entry.key} ${entry.value}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isOwn ? Colors.white : theme.textTheme.bodyMedium?.color,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );
@@ -1042,6 +1218,25 @@ class MemberManagementSheet extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+class MessageReaction {
+  final int pharmacistId;
+  final String pharmacistName;
+  final String emoji;
+
+  MessageReaction({
+    required this.pharmacistId,
+    required this.pharmacistName,
+    required this.emoji,
+  });
+
+  factory MessageReaction.fromJson(Map<String, dynamic> json) {
+    return MessageReaction(
+      pharmacistId: json['pharmacist_id'],
+      pharmacistName: json['name'] ?? 'Unknown',
+      emoji: json['emoji'],
     );
   }
 }
