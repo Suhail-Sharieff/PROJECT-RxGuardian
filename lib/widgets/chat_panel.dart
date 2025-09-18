@@ -23,6 +23,8 @@ class ChatMessage {
   final DateTime createdAt;
   final bool isOwnMessage;
   final RxList<MessageReaction> reactions;
+  final String? replyToMessageText;
+  final String? replyToSenderName;
   ChatMessage({
     required this.messageId,
     required this.roomId,
@@ -31,7 +33,9 @@ class ChatMessage {
     required this.messageText,
     required this.createdAt,
     this.isOwnMessage = false,
-    List<MessageReaction>? initialReactions, // <-- ADD THIS
+    List<MessageReaction>? initialReactions,
+    this.replyToMessageText, // Add to constructor
+    this.replyToSenderName,  // Add to constructor
   }) : reactions = (initialReactions ?? []).obs;
   factory ChatMessage.fromJson(Map<String, dynamic> json, int currentUserId) {
     // Parse the list of reactions from the API response
@@ -51,6 +55,8 @@ class ChatMessage {
       createdAt: DateTime.parse(json['created_at']),
       isOwnMessage: json['sender_id'] == currentUserId,
       initialReactions: reactionsList, // <-- PASS THE PARSED LIST
+      replyToMessageText: json['reply_to_message_text'], // <-- ADD THIS
+      replyToSenderName: json['reply_to_sender_name'],
     );
   }
 }
@@ -257,6 +263,7 @@ class ChatRoomController extends GetxController {
 
   final ChatController _chatController = Get.find();
   final AuthController _authController = Get.find();
+  var replyingToMessage = Rx<ChatMessage?>(null);
 
   var messages = <ChatMessage>[].obs;
   var isLoadingMessages = true.obs;
@@ -269,7 +276,14 @@ class ChatRoomController extends GetxController {
   final messageTextController = TextEditingController();
   final scrollController = ScrollController();
   Timer? _typingTimer;
+  void setReplyingTo(ChatMessage message) {
+    replyingToMessage.value = message;
+  }
 
+  // NEW: Method to cancel the reply
+  void cancelReply() {
+    replyingToMessage.value = null;
+  }
   @override
   void onInit() {
     super.onInit();
@@ -382,16 +396,27 @@ class ChatRoomController extends GetxController {
       }
     });
   }
-
+// In ChatRoomController
   void sendMessage() {
     final text = messageTextController.text.trim();
     if (text.isNotEmpty) {
-      _chatController.socket.emit('send_message', {
+      // Create the payload
+      final payload = {
         'room_id': room.roomId,
         'message_text': text,
         'message_type': 'text',
-      });
+      };
+
+      // If we are replying, add the ID to the payload
+      if (replyingToMessage.value != null) {
+        payload['reply_to_message_id'] = replyingToMessage.value!.messageId;
+      }
+
+      _chatController.socket.emit('send_message', payload);
+
       messageTextController.clear();
+      // Important: Cancel the reply mode after sending
+      cancelReply();
       _chatController.socket.emit('stop_typing', {'room_id': room.roomId});
       _typingTimer?.cancel();
       _scrollToBottom();
@@ -857,6 +882,45 @@ class ChatRoomView extends StatelessWidget {
             ),
           );
         }),
+        Obx(() {
+          final replyingTo = controller.replyingToMessage.value;
+          if (replyingTo == null) return const SizedBox.shrink();
+
+          return Container(
+            padding: const EdgeInsets.all(8),
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: theme.primaryColor.withOpacity(0.1),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Row(
+              children: [
+                Container(width: 4, height: 40, color: theme.primaryColor, margin: const EdgeInsets.only(right: 8)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        replyingTo.senderName,
+                        style: TextStyle(fontWeight: FontWeight.bold, color: theme.primaryColor),
+                      ),
+                      Text(
+                        replyingTo.messageText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: controller.cancelReply,
+                )
+              ],
+            ),
+          );
+        }),
+        // --- END OF REPLY PREVIEW BAR ---
         MessageInput(controller: controller),
       ],
     );
@@ -895,6 +959,13 @@ class MessageBubble extends StatelessWidget {
           )).toList(),
         ),
         actions: [
+          TextButton(
+            child: const Text('Reply'),
+            onPressed: () {
+              controller.setReplyingTo(message);
+              Get.back(); // Close the dialog
+            },
+          ),
           if (hasUserReacted)
             TextButton(
               child: const Text('Remove Reaction', style: TextStyle(color: Colors.red)),
@@ -937,6 +1008,37 @@ class MessageBubble extends StatelessWidget {
           child: Column(
             crossAxisAlignment: isOwn ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
+              if (message.replyToMessageText != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: const EdgeInsets.only(bottom: 4),
+                  decoration: BoxDecoration(
+                    color: isOwn ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        message.replyToSenderName ?? 'Original Message',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: isOwn ? Colors.white70 : theme.textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                      Text(
+                        message.replyToMessageText!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isOwn ? Colors.white70 : theme.textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               if (!isOwn)
                 Text(
                   message.senderName,
