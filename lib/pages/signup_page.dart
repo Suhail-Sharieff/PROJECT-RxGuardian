@@ -252,6 +252,8 @@ class _SignupPageState extends State<SignupPage> {
                 Navigator.of(context).pushNamed(VerifyEmailPage.route_name);
               }
             }
+            showToast(context, "Please Login now", ToastType.SUCCESS);
+            Navigator.of(context).pushReplacementNamed(LoginPage.route_name);
           },
           child: Text(
             'Create Account',

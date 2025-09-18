@@ -1,8 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:highlight/languages/http.dart';
-import 'package:http/http.dart';
 import 'package:rxGuardian/controllers/auth_controller.dart';
 import 'package:rxGuardian/pages/advanced_analysis.dart';
 import 'package:rxGuardian/pages/verify_email_page.dart';
@@ -15,6 +13,7 @@ import '../constants/routes.dart';
 
 import '../controllers/setting_controller.dart';
 import '../network/network_constants.dart';
+import '../widgets/chat_panel.dart';
 import 'login_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -53,8 +52,6 @@ class HomePage extends StatelessWidget {
   }
 }
 
-
-
 // The actual UI for the home page, separated for clarity
 class _HomePageContent extends StatelessWidget {
   // We remove the constructor with the 'user' parameter.
@@ -68,6 +65,7 @@ class _HomePageContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: myAppBar(context), // CORRECTION: Closed the AppBar properly
+      endDrawer: const ChatSidebar(),
       // CORRECTION: The 'body' must be a direct property of the Scaffold, not inside the AppBar
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -98,8 +96,7 @@ class _HomePageContent extends StatelessWidget {
             FeatureCard(
               icon: Icons.analytics_outlined,
               title: 'Pharmacy Sales Details',
-              description:
-                  'View sales reports with track revenue',
+              description: 'View sales reports with track revenue',
               onTap: () {
                 // TODO: Navigate to Analytics Page
                 Navigator.of(context).pushNamed(sale_details_route);
@@ -108,28 +105,46 @@ class _HomePageContent extends StatelessWidget {
             FeatureCard(
               icon: Icons.people_outline,
               title: 'Manager Console',
-              description:
-                  'View employee roster and manage staff details',
-              onTap: () async{
+              description: 'View employee roster and manage staff details',
+              onTap: () async {
                 // TODO: Navigate to Staff Management Page
-                var res=await contr.verifyManagerAccess();
-                if(res) {
+                var res = await contr.verifyManagerAccess();
+                if (res) {
                   Navigator.of(context).pushNamed(manager_console_route);
                 } else {
-                  showToast(context, "You dont have access to this console only your manager does!", ToastType.WARNING);
+                  showToast(
+                    context,
+                    "You dont have access to this console only your manager does!",
+                    ToastType.WARNING,
+                  );
                 }
               },
-            ),FeatureCard(
+            ),
+            FeatureCard(
               icon: Icons.people_outline,
               title: 'Advanced Analysis',
-              description:
-                  'View detailed graphical view of data',
-              onTap: () async{
-                Navigator.of(context).pushNamed(PerformanceAnalysisPage.route_name);
+              description: 'View detailed graphical view of data',
+              onTap: () async {
+                Navigator.of(
+                  context,
+                ).pushNamed(PerformanceAnalysisPage.route_name);
               },
             ),
           ],
         ),
+      ),
+      floatingActionButton: Builder(
+        builder: (context) {
+          // We use a Builder to get the correct Scaffold context.
+          return FloatingActionButton(
+            onPressed: () {
+              // This command opens the drawer defined in endDrawer.
+              Scaffold.of(context).openEndDrawer();
+            },
+            tooltip: 'Open Chat',
+            child: const Icon(Icons.chat),
+          );
+        },
       ),
     );
   }

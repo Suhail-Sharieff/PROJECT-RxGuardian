@@ -53,7 +53,6 @@ class AuthController extends GetxController {
         password: password,
       );
 
-      if(!userCredential.user!.emailVerified) return false;
 
       var url = Uri.http(main_uri, '/auth/register');
       var res = await http.post(
@@ -61,10 +60,11 @@ class AuthController extends GetxController {
         body: {'name':name,'dob':dob,'address':address,'phone':phone,'password':password,'email':email},
         headers: {'authorization': 'Bearer $accessToken'},
       );
-      if(ResponseHandler.is_good_response(res, context)){
-        return true;
-      }
-      return false;
+
+      if(!userCredential.user!.emailVerified) return false;
+
+
+      return true;
     } catch (e) {
       showToast(context, e.toString(), ToastType.ERROR);
     }
