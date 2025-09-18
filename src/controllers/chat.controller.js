@@ -71,77 +71,77 @@ const createChatRoom = asyncHandler(async (req, res) => {
 });
 
 
-/**sampel response for below api: get/chatrooms:
-{
-    "statusCode": 200,
-    "data": [
-        {
-            "room_id": 3,
-            "room_name": "New Room",
-            "room_type": "shop",
-            "shop_id": 1,
-            "created_by": 17,
-            "created_at": "2025-09-18T06:43:42.000Z",
-            "updated_at": "2025-09-18T06:43:42.000Z",
-            "is_active": 1,
-            "member_count": 1,
-            "last_message": null,
-            "last_message_time": null,
-            "last_message_sender_id": null,
-            "last_message_sender_name": null
-        }
-    ],
-    "message": "Chat rooms retrieved successfully",
-    "success": true
-} 
-
- */
 const getChatRooms = asyncHandler(async (req, res) => {
     const pharmacist_id = req.pharmacist.pharmacist_id;
     const { room_type } = req.query;
+    const shop_id = await getShopImWorkingIn(req, res);
 
-    const shop_id=await getShopImWorkingIn(req,res);
-
+    // This single, optimized query now includes the unread_count
     let query = `
-        SELECT cr.*, 
-               (SELECT COUNT(*) FROM chat_room_members crm2 
-                WHERE crm2.room_id = cr.room_id AND crm2.is_active = TRUE) as member_count,
-               (SELECT cm2.message_text FROM chat_messages cm2 
-                WHERE cm2.room_id = cr.room_id AND cm2.is_deleted = FALSE 
-                ORDER BY cm2.created_at DESC LIMIT 1) as last_message,
-               (SELECT cm2.created_at FROM chat_messages cm2 
-                WHERE cm2.room_id = cr.room_id AND cm2.is_deleted = FALSE 
-                ORDER BY cm2.created_at DESC LIMIT 1) as last_message_time,
-               (SELECT cm2.sender_id FROM chat_messages cm2 
-                WHERE cm2.room_id = cr.room_id AND cm2.is_deleted = FALSE 
-                ORDER BY cm2.created_at DESC LIMIT 1) as last_message_sender_id,
-               (SELECT p2.name FROM chat_messages cm2 
-                JOIN pharmacist p2 ON cm2.sender_id = p2.pharmacist_id
-                WHERE cm2.room_id = cr.room_id AND cm2.is_deleted = FALSE 
-                ORDER BY cm2.created_at DESC LIMIT 1) as last_message_sender_name
-        FROM chat_rooms cr
-        WHERE cr.is_active = TRUE
-        AND cr.room_id IN (
-            SELECT room_id FROM chat_room_members 
-            WHERE pharmacist_id = ? AND is_active = TRUE
+        WITH 
+        LatestMessages AS (
+            SELECT
+                cm.room_id,
+                cm.message_text,
+                cm.created_at,
+                cm.sender_id,
+                p.name AS sender_name,
+                ROW_NUMBER() OVER(PARTITION BY cm.room_id ORDER BY cm.created_at DESC) as rn
+            FROM chat_messages cm
+            JOIN pharmacist p ON cm.sender_id = p.pharmacist_id
+            WHERE cm.is_deleted = FALSE
+        ),
+        RoomMemberCounts AS (
+            SELECT
+                room_id,
+                COUNT(*) as member_count
+            FROM chat_room_members
+            WHERE is_active = TRUE
+            GROUP BY room_id
         )
+        SELECT 
+            cr.*,
+            rmc.member_count,
+            lm.message_text as last_message,
+            lm.created_at as last_message_time,
+            lm.sender_id as last_message_sender_id,
+            lm.sender_name as last_message_sender_name,
+            
+            -- THIS IS THE NEW PART: Calculate unread_count --
+            (SELECT COUNT(*) 
+             FROM chat_messages cm 
+             WHERE cm.room_id = cr.room_id 
+               AND (cm.created_at > crm.last_read_timestamp OR crm.last_read_timestamp IS NULL)
+               AND cm.sender_id != ? -- Don't count your own messages as unread
+            ) as unread_count
+
+        FROM 
+            chat_rooms cr
+        JOIN 
+            chat_room_members crm ON cr.room_id = crm.room_id
+        LEFT JOIN 
+            RoomMemberCounts rmc ON cr.room_id = rmc.room_id
+        LEFT JOIN 
+            LatestMessages lm ON cr.room_id = lm.room_id AND lm.rn = 1
+        WHERE 
+            cr.is_active = TRUE
+            AND crm.pharmacist_id = ? 
+            AND crm.is_active = TRUE
     `;
     
-    const params = [pharmacist_id];
+    // Note: pharmacist_id is used twice now
+    const params = [pharmacist_id, pharmacist_id]; 
 
     if (room_type) {
         query += " AND cr.room_type = ?";
         params.push(room_type);
     }
-
     if (shop_id) {
         query += " AND cr.shop_id = ?";
         params.push(shop_id);
     }
 
-    query += `
-        ORDER BY COALESCE(last_message_time, cr.created_at) DESC
-    `;
+    query += ` ORDER BY COALESCE(last_message_time, cr.created_at) DESC `;
 
     const [rooms] = await db.execute(query, params);
 
@@ -149,7 +149,6 @@ const getChatRooms = asyncHandler(async (req, res) => {
         new ApiResponse(200, rooms, "Chat rooms retrieved successfully")
     );
 });
-
 const joinChatRoom = asyncHandler(async (req, res) => {
     const { room_id } = req.params;
     const pharmacist_id = req.pharmacist.pharmacist_id;
@@ -318,7 +317,7 @@ const getMessages = asyncHandler(async (req, res) => {
 
     // Check if user is a member of the room
     const [memberCheck] = await db.execute(
-        "SELECT * FROM chat_room_members WHERE room_id = ? AND pharmacist_id = ? AND is_active = TRUE",
+        "SELECT * FROM chat_room_members WHERE room_id = ? AND pharmacist_id = ?",
         [room_id, pharmacist_id]
     );
 
@@ -343,12 +342,12 @@ const getMessages = asyncHandler(async (req, res) => {
     
     const params = [room_id];
 
-    if (before_message_id) {
-        query += " AND cm.message_id < ?";
-        params.push(before_message_id);
-    }
+    // if (before_message_id) {
+    //     query += " AND cm.message_id < ?";
+    //     params.push(before_message_id);
+    // }
 
-    query += ` ORDER BY cm.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+    query += ` ORDER BY cm.created_at DESC `;
 
     const [messages] = await db.execute(query, params);
 

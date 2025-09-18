@@ -5,7 +5,6 @@ import { db } from "./sql_connection.utils.js";
 class SocketManager {
     constructor() {
         this.io = null;
-        // No longer need to manually track users, Socket.IO rooms are sufficient
     }
 
     initialize(server) {
@@ -51,7 +50,7 @@ class SocketManager {
 
     setupEventHandlers() {
         this.io.on('connection', (socket) => {
-            console.log(`🔌 User connected: ${socket.pharmacist.name} (${socket.id})`);
+            console.log(`🔌 User connected: ${socket.pharmacist.name} SOCK_ID=(${socket.id})`);
             this.handleConnection(socket);
             this.setupSocketEvents(socket);
         });
@@ -59,6 +58,7 @@ class SocketManager {
 
     async handleConnection(socket) {
         const { pharmacist_id } = socket.pharmacist;
+        //whenver some connection is established means he is online ie viewing chat app
         await this.updateOnlineStatus(pharmacist_id, socket.id, 'online');
         await this.joinUserRooms(socket, pharmacist_id);
         this.broadcastUserStatus(pharmacist_id, 'online');
@@ -121,57 +121,80 @@ class SocketManager {
 
         // --- MESSAGING ---
       // --- MESSAGING ---
-socket.on('send_message', async (data) => {
-    const { room_id, message_text, message_type = 'text', reply_to_message_id = null } = data;
+        socket.on('send_message', async (data) => {
+            const { room_id, message_text, message_type = 'text', reply_to_message_id = null } = data;
+            try {
+                // ===================================================================
+                // NEW: Check if the user is muted before processing the message
+                // ===================================================================
+                const [memberRows] = await db.execute(
+                    `SELECT is_muted FROM chat_room_members WHERE room_id = ? AND pharmacist_id = ?`,
+                    [room_id, pharmacist_id]
+                );
+
+                // First, ensure the user is actually a member of the room.
+                if (memberRows.length === 0) {
+                    // Silently fail or inform the user they are not in the room.
+                    return socket.emit('error', { message: 'You are not a member of this room.' });
+                }
+
+                const member = memberRows[0];
+                // Now, check the mute status. The value from the DB will be 1 for true or 0 for false.
+                if (member.is_muted) {
+                    // If the user is muted, send a specific error back to them and stop.
+                    return socket.emit('error', { message: 'You are muted and cannot send messages.' });
+                }
+                // ===================================================================
+                // End of new logic. If the code reaches here, the user is not muted.
+                // ===================================================================
+
+                // Original logic: If not muted, proceed to insert and broadcast the message.
+                const [result] = await db.execute(
+                    `INSERT INTO chat_messages (room_id, sender_id, message_text, message_type, reply_to_message_id) 
+                    VALUES (?, ?, ?, ?, ?)`,
+                    [room_id, pharmacist_id, message_text, message_type, reply_to_message_id]
+                );
+                const message_id = result.insertId;
+
+                // Fetch the full message to broadcast, ensuring consistency with GET /messages
+                const [messageRows] = await db.execute(
+                    `SELECT cm.*, p.name as sender_name 
+                    FROM chat_messages cm JOIN pharmacist p ON cm.sender_id = p.pharmacist_id 
+                    WHERE cm.message_id = ?`,
+                    [message_id]
+                );
+
+                // Broadcast to the correctly prefixed room
+                this.io.to(`room_${room_id}`).emit('new_message', messageRows[0]);
+            } catch (error) {
+                console.error("Error in send_message:", error);
+                socket.emit('error', { message: 'Could not send message.' });
+            }
+        });
+        // In your main socket connection file
+socket.on('mark_room_as_read', async (data) => {
+    const { room_id } = data;
+    // Get the authenticated user's ID from the socket object
+    const pharmacist_id = socket.pharmacist.pharmacist_id; 
+
+    if (!room_id || !pharmacist_id) {
+        console.error("mark_room_as_read failed: missing room_id or pharmacist_id");
+        return;
+    }
+
     try {
-        // ===================================================================
-        // NEW: Check if the user is muted before processing the message
-        // ===================================================================
-        const [memberRows] = await db.execute(
-            `SELECT is_muted FROM chat_room_members WHERE room_id = ? AND pharmacist_id = ?`,
+        // Update the timestamp to the current time
+        await db.execute(
+            `UPDATE chat_room_members 
+             SET last_read_timestamp = CURRENT_TIMESTAMP 
+             WHERE room_id = ? AND pharmacist_id = ?`,
             [room_id, pharmacist_id]
         );
-
-        // First, ensure the user is actually a member of the room.
-        if (memberRows.length === 0) {
-            // Silently fail or inform the user they are not in the room.
-            return socket.emit('error', { message: 'You are not a member of this room.' });
-        }
-
-        const member = memberRows[0];
-        // Now, check the mute status. The value from the DB will be 1 for true or 0 for false.
-        if (member.is_muted) {
-            // If the user is muted, send a specific error back to them and stop.
-            return socket.emit('error', { message: 'You are muted and cannot send messages.' });
-        }
-        // ===================================================================
-        // End of new logic. If the code reaches here, the user is not muted.
-        // ===================================================================
-
-        // Original logic: If not muted, proceed to insert and broadcast the message.
-        const [result] = await db.execute(
-            `INSERT INTO chat_messages (room_id, sender_id, message_text, message_type, reply_to_message_id) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [room_id, pharmacist_id, message_text, message_type, reply_to_message_id]
-        );
-        const message_id = result.insertId;
-
-        // Fetch the full message to broadcast, ensuring consistency with GET /messages
-        const [messageRows] = await db.execute(
-            `SELECT cm.*, p.name as sender_name 
-             FROM chat_messages cm JOIN pharmacist p ON cm.sender_id = p.pharmacist_id 
-             WHERE cm.message_id = ?`,
-            [message_id]
-        );
-
-        // Broadcast to the correctly prefixed room
-        this.io.to(`room_${room_id}`).emit('new_message', messageRows[0]);
+        console.log(`User ${pharmacist_id} marked room ${room_id} as read.`);
     } catch (error) {
-        console.error("Error in send_message:", error);
-        socket.emit('error', { message: 'Could not send message.' });
+        console.error("Failed to mark room as read:", error);
     }
 });
-
         // --- TYPING INDICATORS ---
         // FIX: Consolidated duplicated handlers into one clean implementation.
         socket.on('start_typing', ({ room_id }) => {
