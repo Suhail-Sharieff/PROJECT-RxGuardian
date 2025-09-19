@@ -4,7 +4,7 @@ dotenv.config();
 
 const db = createPool({
   host: process.env.MYSQL_HOST,
-  user:process.env.MYSQL_USER,
+  user:"root",
   password: process.env.MYSQL_ROOT_PASSWORD,
   connectionLimit: 20,
   waitForConnections:true,
