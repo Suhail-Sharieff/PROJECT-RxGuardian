@@ -1,49 +1,61 @@
 # 💊 PROJECT — RxGuardian
 
-**RxGuardian** is a Pharmacy Management System built to simplify the lives of pharmacists by providing powerful tools for stock management, billing, analytics, and workforce handling.  
+**RxGuardian** is an advanced **Pharmacy Management System (PMS)** designed to streamline pharmacy operations by providing robust tools for **inventory control, billing, analytics, workforce management, and communication**.  
 
-Currently, this is an **MVP** (Minimum Viable Product). Many more advanced features are under active development. 🚀  
+This repository currently represents the **MVP (Minimum Viable Product)**. Several enterprise-grade features are under active development. 🚀  
 
 ---
 
 ## 🛠️ Tech Stack
-- **Frontend:** Flutter  
-- **Backend:** Node.js  
-- **Authentication:** Firebase + JWT  
-- **Database:** MySQL (Oracle-based)  
+- **Frontend:** Flutter (cross-platform mobile & desktop UI)  
+- **Backend:** Node.js (REST API + WebSocket server)  
+- **Authentication:** Firebase + JWT (hybrid model for scalability and security)  
+- **Database:** MySQL (Oracle-based distribution) with Redis for caching  
+- **Real-Time Communication:** Socket.IO  
 
 ---
 
-## ✨ Key Features
+## ✨ Core Features
 
-1. 🔐 **Secure Authentication**  
-   - Combination of Firebase & JWT for robust security  
+1. 🔐 **Authentication & Security**  
+   - Hybrid Firebase + JWT flow for multi-layered security  
+   - Session handling with refresh tokens  
 
-2. 📦 **Stock Management**  
-   - View, manage, and analyze available medicines in real-time  
+2. 📦 **Inventory & Stock Management**  
+   - Real-time stock visibility  
+   - Low-stock and expiry alerts  
 
-3. 🧾 **Dedicated POS Billing Console**  
-   - Integrated **customer tracking system**  
-   - Seamless checkout experience  
+3. 🧾 **Point of Sale (POS) Console**  
+   - Fast, dedicated billing interface  
+   - Integrated **customer management module**  
 
-4. 📊 **Advanced Analytics**  
-   - Daily, monthly, and yearly analysis of:  
-     - Sales trends  
-     - Stock consumption  
-     - Medicine performance  
+4. 📊 **Business Analytics**  
+   - Daily, monthly, and yearly reports  
+   - Sales trends, stock consumption, and drug performance  
 
-5. 🛒 **Integrated Buying Panel**  
+5. 🛒 **Procurement Panel**  
    - Direct purchase of medicines from manufacturers  
+   - Streamlined vendor integration  
 
 6. 🧑‍💼 **Manager Console**  
-   - Track employees’ sales & performance  
-   - Hire pharmacists across the globe based on experience  
+   - Track employee performance and sales contribution  
+   - Remote pharmacist hiring & role-based access  
 
-7. 🤖 **AI-Driven Data Insights (Planned)**  
-   - Predictive analytics to optimize:  
-     - Billing  
-     - Purchasing  
-     - Hiring decisions  
+7. 💬 **Integrated Chat System**  
+   - Role-based rooms (e.g., divisions/teams)  
+   - Message editing, reactions, and threaded replies  
+
+8. 🤖 **AI-Driven Insights (Planned)**  
+   - Predictive analytics for billing, procurement, and hiring  
+   - Demand forecasting with anomaly detection  
+
+---
+
+## ⚡ Optimizations
+- Optimized SQL queries for performance  
+- Transaction-based query failure management  
+- **70% faster response time** via Redis caching  
+- Secure WebSocket-based chat with Socket.IO  
 
 ---
 
@@ -51,8 +63,9 @@ Currently, this is an **MVP** (Minimum Viable Product). Many more advanced featu
 
 ### 🖼️ System Overview
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/110b6d06-c13d-4c13-9a17-889567670646" width="45%" />
-  <img src="https://github.com/user-attachments/assets/1429f83c-8a75-4b95-a79f-3a9726be72f8" width="45%" />
+
+  <img width="4291" height="1881" alt="er drawio" src="https://github.com/user-attachments/assets/aa551615-2f5d-419f-bf23-5baed46db559" />
+
 </p>
 
 ---
@@ -82,7 +95,8 @@ Currently, this is an **MVP** (Minimum Viable Product). Many more advanced featu
   <img src="https://github.com/user-attachments/assets/0cdc7e87-4293-406e-827c-f201caffb421" width="32%" />
 </p>
 <p>
-<img src="https://github.com/user-attachments/assets/04278483-ea17-403e-b5d8-5cdb69882b37" width="1900"  />
+<img src="https://github.com/user-attachments/assets/04278483-ea17-403e-b5d8-5cdb69882b37" width="32%"  />
+<img src="https://github.com/user-attachments/assets/2b22499d-0b83-4009-be87-f4b9d52d5bfd" width="32%"/>
 
 </p>
 
@@ -107,5 +121,8 @@ Currently, this is an **MVP** (Minimum Viable Product). Many more advanced featu
 
 ## 👨‍💻 Contributors
 - Built with ❤️ by **Suhail**
+
+
+
 
 

@@ -8,92 +8,106 @@ import { buildPaginatedFilters } from "../Utils/paginated_query_builder.js";
 import { redis } from "../Utils/redis.connection.js";
 
 const initSale = asyncHandler(async (req, res) => {
-  const { pharmacist_id } = req.pharmacist;
-  const shop_id = await getShopImWorkingIn(req, res);
+ const { pharmacist_id } = req.pharmacist;
+ const shop_id = await getShopImWorkingIn(req, res);
 
-  const { items, discount = 0,customer_id } = req.body;
 
-  if (!Array.isArray(items) || items.length === 0) {
-    throw new ApiError(400, "Provide items array with { drug_id, quantity }");
+ const { items, discount = 0,customer_id } = req.body;
+
+
+ if (!Array.isArray(items) || items.length === 0) {
+  throw new ApiError(400, "Provide items array with { drug_id, quantity }");
+ }
+
+
+ if(!customer_id) throw new ApiError(400,"Please provide customer id")
+
+
+
+ for (const it of items) {
+  if (
+   !it ||
+   typeof it.drug_id !== "number" ||
+ typeof it.quantity !== "number" ||
+   it.quantity <= 0
+ ) {
+   throw new ApiError(
+    400,
+   "Each item must include numeric drug_id and positive quantity"
+   );
   }
+ }
 
-  if(!customer_id) throw new ApiError(400,"Please provide customer id")
+
+ try {
+
+
+  const [saleResult] = await db.execute(
+   "INSERT INTO sale (shop_id, pharmacist_id, discount,customer_id) VALUES (?, ?, ?,?)",
+   [shop_id, pharmacist_id, discount,customer_id]
+  );
+  const sale_id = saleResult.insertId;
+  if (!sale_id) throw new ApiError(500, "Failed to create sale");
+
+
+  const placeholders = items.map(() => "(?,?,?)").join(",");
+  const values = items.flatMap((it) => [sale_id, it.drug_id, it.quantity]);
+  const insertQuery = `INSERT INTO sale_item (sale_id, drug_id, quantity) VALUES ${placeholders}`;
+
+
+  // console.log(`place holder to insert are: ${placeholders}`);
+
+
+  const [itemsResult] = await db.execute(insertQuery, values);
 
 
   for (const it of items) {
-    if (
-      !it ||
-      typeof it.drug_id !== "number" ||
-      typeof it.quantity !== "number" ||
-      it.quantity <= 0
-    ) {
-      throw new ApiError(
-        400,
-        "Each item must include numeric drug_id and positive quantity"
-      );
-    }
+   const [upd] = await db.execute(
+    "UPDATE quantity SET quantity = quantity - ? WHERE drug_id = ? AND shop_id = ? AND quantity >= ?",
+    [it.quantity, it.drug_id, shop_id, it.quantity]
+   );
+   if (upd.affectedRows === 0) {
+    throw new ApiError(
+     400,
+     `Insufficient stock in shop ${shop_id} for drug_id ${it.drug_id}`
+    );
+   }
   }
 
-  try {
-
-    const [saleResult] = await db.execute(
-      "INSERT INTO sale (shop_id, pharmacist_id, discount,customer_id) VALUES (?, ?, ?,?)",
-      [shop_id, pharmacist_id, discount,customer_id]
-    );
-    const sale_id = saleResult.insertId;
-    if (!sale_id) throw new ApiError(500, "Failed to create sale");
-
-    const placeholders = items.map(() => "(?,?,?)").join(",");
-    const values = items.flatMap((it) => [sale_id, it.drug_id, it.quantity]);
-    const insertQuery = `INSERT INTO sale_item (sale_id, drug_id, quantity) VALUES ${placeholders}`;
-
-    console.log(`place holder to insert are: ${placeholders}`);
-
-    const [itemsResult] = await db.execute(insertQuery, values);
-
-    for (const it of items) {
-      const [upd] = await db.execute(
-        "UPDATE quantity SET quantity = quantity - ? WHERE drug_id = ? AND shop_id = ? AND quantity >= ?",
-        [it.quantity, it.drug_id, shop_id, it.quantity]
-      );
-      if (upd.affectedRows === 0) {
-        throw new ApiError(
-          400,
-          `Insufficient stock in shop ${shop_id} for drug_id ${it.drug_id}`
-        );
-      }
-    }
 
 
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        { sale_id, itemsInserted: itemsResult.affectedRows },
-        "Sale created successfully"
-      )
-    );
-  } catch (err) {
-    if (err instanceof ApiError) throw err;
-    throw new ApiError(500, err.message || "Database error during sale creation");
-  }
+  return res.status(200).json(
+   new ApiResponse(
+    200,
+    { sale_id, itemsInserted: itemsResult.affectedRows },
+    "Sale created successfully"
+   )
+  );
+ } catch (err) {
+  if (err instanceof ApiError) throw err;
+  throw new ApiError(500, err.message || "Database error during sale creation");
+ }
 });
 
-const getOverallSales=asyncHandler(
-  async(req,res)=>{
 
-      try{
-      const shop_id=await getShopImWorkingIn(req,res);
+
+
+const getOverallSales = asyncHandler(
+  async (req, res) => {
+
+    try {
+      const shop_id = await getShopImWorkingIn(req, res);
       const { limit, offset, whereClause, params } = buildPaginatedFilters({
-            req,
-            baseParams: [shop_id],
-            allowedFilters: [
-              { key: "searchByName", column: "p.name", type: "string" },
-              { key: "searchBySaleId", column: "sa.sale_id", type: "number" },
-              { key: "searchByPharmacistId", column: "p.pharmacist_id", type: "number" },
-            ]
+        req,
+        baseParams: [shop_id],
+        allowedFilters: [
+          { key: "searchByName", column: "p.name", type: "string" },
+          { key: "searchBySaleId", column: "sa.sale_id", type: "number" },
+          { key: "searchByPharmacistId", column: "p.pharmacist_id", type: "number" },
+        ]
       });
-      const query=
-      `
+      const query =
+        `
       select sa.sale_id,sa.shop_id,
      sum(d.selling_price*si.quantity) as total,
       sa.discount,
@@ -114,37 +128,37 @@ const getOverallSales=asyncHandler(
       limit ${limit} offset ${offset}
       `
 
-      const key=`getOverallSales:${whereClause}:${limit}:${offset}`
-      const cache=await redis.get(key)
-      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched overall sales from redis"))
+      const key = `getOverallSales:${whereClause}:${limit}:${offset}`
+      const cache = await redis.get(key)
+      if (cache) return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Fetched overall sales from redis"))
 
 
-      const [rows]=await db.execute(query,params);
+      const [rows] = await db.execute(query, params);
 
-      await redis.set(key,JSON.stringify(rows))
-      await redis.expire(key,60)
+      await redis.set(key, JSON.stringify(rows))
+      await redis.expire(key, 60)
 
-      return res.status(200).json(new ApiResponse(200,rows,`Fetched sales !`))
-      }catch(err){
-        throw new ApiError(400,err.message);
-      }
+      return res.status(200).json(new ApiResponse(200, rows, `Fetched sales !`))
+    } catch (err) {
+      throw new ApiError(400, err.message);
+    }
 
   }
 )
 
 
-const getDetailsOfSale=asyncHandler(
-  async(req,res)=>{
-    try{
-      const {sale_id}=req.params;
-      if(!sale_id) throw new ApiError(400,'sale_id is missing!')
+const getDetailsOfSale = asyncHandler(
+  async (req, res) => {
+    try {
+      const { sale_id } = req.params;
+      if (!sale_id) throw new ApiError(400, 'sale_id is missing!')
 
-      const key=`getDetailsOfSale:${sale_id}`
-      const cache=await redis.get(key)
-      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched from redis"))
+      const key = `getDetailsOfSale:${sale_id}`
+      const cache = await redis.get(key)
+      if (cache) return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Fetched from redis"))
 
-    const query=
-    `select d.drug_id,d.name,d.selling_price,si.quantity,p.pharmacist_id,p.name
+      const query =
+        `select d.drug_id,d.name,d.selling_price,si.quantity,p.pharmacist_id,p.name
     as sold_by,c.name as customer_name,c.phone as customer_phone  from
     sale as sa
     left join sale_item as si on si.sale_id=sa.sale_id
@@ -152,41 +166,41 @@ const getDetailsOfSale=asyncHandler(
     left join pharmacist as p on sa.pharmacist_id=p.pharmacist_id
     left join customer as c on sa.customer_id=c.customer_id
     where sa.sale_id=?`
-    const [rows]=await db.execute(query,[sale_id])
+      const [rows] = await db.execute(query, [sale_id])
 
-    await redis.set(key,JSON.stringify(rows))
-    await redis.expire(key,30)
+      await redis.set(key, JSON.stringify(rows))
+      await redis.expire(key, 30)
 
-    return res.status(200).json(new ApiResponse(200,rows));
+      return res.status(200).json(new ApiResponse(200, rows));
 
-    }catch(err){
-      throw new ApiError(400,err.message)
+    } catch (err) {
+      throw new ApiError(400, err.message)
     }
   }
 );
 
 
-const getDateVsRevenue=asyncHandler(
-  async(req,res)=>{
-      try{
-        const shop_id=await getShopImWorkingIn(req,res);
-        const { limit, offset, whereClause, params } = buildPaginatedFilters({
-            req,
-            baseParams: [shop_id],
-            allowedFilters: [
-              { key: "year", column: "sa.date", type: "year" },
-              { key: "month", column: "sa.date", type: "month" },
-              { key: "day", column: "sa.date", type: "day" },
-            ]
+const getDateVsRevenue = asyncHandler(
+  async (req, res) => {
+    try {
+      const shop_id = await getShopImWorkingIn(req, res);
+      const { limit, offset, whereClause, params } = buildPaginatedFilters({
+        req,
+        baseParams: [shop_id],
+        allowedFilters: [
+          { key: "year", column: "sa.date", type: "year" },
+          { key: "month", column: "sa.date", type: "month" },
+          { key: "day", column: "sa.date", type: "day" },
+        ]
       });
 
-      
-      const key=`getDateVsRevenue:${whereClause}:${limit}:${offset}:${params}`
-      const cache=await redis.get(key)
-      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched date vs revenue from redis!"))
+
+      const key = `getDateVsRevenue:${whereClause}:${limit}:${offset}:${params}`
+      const cache = await redis.get(key)
+      if (cache) return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Fetched date vs revenue from redis!"))
 
 
-        const query=
+      const query =
         `select x.sold_on as date,sum(x.grand_total) as net_revenue from (select sa.sale_id,sa.shop_id,sa.date as sold_on,sum(d.selling_price*q.quantity) as total,sa.discount,
         sum(d.selling_price*q.quantity)-sa.discount as grand_total
         from sale as sa left join sale_item as si on sa.sale_id=si.sale_id
@@ -199,40 +213,40 @@ const getDateVsRevenue=asyncHandler(
 
 `
 
-      const [rows]=await db.execute(query,params);
+      const [rows] = await db.execute(query, params);
 
 
-      await redis.set(key,JSON.stringify(rows))
-      await redis.expire(key,60)
+      await redis.set(key, JSON.stringify(rows))
+      await redis.expire(key, 60)
 
 
 
-      return res.status(200).json(new ApiResponse(200,rows,"Fetched date vs revenue!"));
-      }catch(err){
-        throw new ApiError(400,err.message);
-      }
+      return res.status(200).json(new ApiResponse(200, rows, "Fetched date vs revenue!"));
+    } catch (err) {
+      throw new ApiError(400, err.message);
+    }
   }
 );
 
-const  getDateVsSale=asyncHandler(
-  async(req,res)=>{
-      try{
-        const shop_id=await getShopImWorkingIn(req,res);
+const getDateVsSale = asyncHandler(
+  async (req, res) => {
+    try {
+      const shop_id = await getShopImWorkingIn(req, res);
       const { limit, offset, whereClause, params } = buildPaginatedFilters({
-            req,
-            baseParams: [shop_id],
-            allowedFilters: [
-              { key: "year", column: "s.date", type: "year" },
-              { key: "month", column: "s.date", type: "month" },
-              { key: "day", column: "s.date", type: "day" },
-            ]
+        req,
+        baseParams: [shop_id],
+        allowedFilters: [
+          { key: "year", column: "s.date", type: "year" },
+          { key: "month", column: "s.date", type: "month" },
+          { key: "day", column: "s.date", type: "day" },
+        ]
       });
 
-      const key=`getDateVsSale:${whereClause}:${limit}:${offset}:${params}`
-      const cache=await redis.get(key)
-      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched date vs sale from redis!"))
+      const key = `getDateVsSale:${whereClause}:${limit}:${offset}:${params}`
+      const cache = await redis.get(key)
+      if (cache) return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Fetched date vs sale from redis!"))
 
-      const query=`
+      const query = `
       SELECT 
       DATE(s.date) AS sale_date,
       HOUR(s.date) AS sale_hour,
@@ -244,14 +258,14 @@ const  getDateVsSale=asyncHandler(
       ORDER BY sale_date, sale_hour
       limit ${limit} offset ${offset}
       `
-      const [rows]=await db.execute(query,params);
+      const [rows] = await db.execute(query, params);
 
-      await redis.set(key,JSON.stringify(rows))
-      await redis.expire(key,60)
+      await redis.set(key, JSON.stringify(rows))
+      await redis.expire(key, 60)
 
 
-      return res.status(200).json(new ApiResponse(200,rows,"Fetched date vs sales"))
-      }catch(err){throw new ApiError(400,err.message)}
+      return res.status(200).json(new ApiResponse(200, rows, "Fetched date vs sales"))
+    } catch (err) { throw new ApiError(400, err.message) }
   }
 )
 
@@ -266,15 +280,15 @@ const defaultDateRange = () => {
 
 const discountUsage = asyncHandler(async (req, res) => {
   try {
-    const  shop_id  = await getShopImWorkingIn(req, res);
+    const shop_id = await getShopImWorkingIn(req, res);
     const { startDate, endDate } = req.params.startDate
       ? { startDate: req.params.startDate, endDate: req.params.endDate || new Date().toISOString().slice(0, 10) }
       : defaultDateRange();
 
 
-    const key=`discountUsage:${shop_id}:${startDate}:${endDate}`
-    const cache=await redis.get(key)
-    if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetch discount usage from redis!"))
+    const key = `discountUsage:${shop_id}:${startDate}:${endDate}`
+    const cache = await redis.get(key)
+    if (cache) return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Fetch discount usage from redis!"))
 
     const query = `
       SELECT discount, COUNT(*) AS nSales, COALESCE(SUM(si.quantity * d.selling_price),0) AS revenue
@@ -282,15 +296,15 @@ const discountUsage = asyncHandler(async (req, res) => {
       LEFT JOIN sale_item si ON si.sale_id = s.sale_id
       LEFT JOIN drug d ON d.drug_id = si.drug_id
       WHERE s.shop_id = ?
-        AND s.date BETWEEN ? AND ?
+        AND date(s.date) BETWEEN ? AND ?
       GROUP BY discount
       ORDER BY discount DESC;
     `;
 
     const [rows] = await db.execute(query, [shop_id, startDate, endDate]);
 
-    await redis.set(key,JSON.stringify(rows))
-    await redis.expire(key,60)
+    await redis.set(key, JSON.stringify(rows))
+    await redis.expire(key, 60)
 
 
     return res.status(200).json(new ApiResponse(200, rows, "Discount usage fetched"));
@@ -300,4 +314,4 @@ const discountUsage = asyncHandler(async (req, res) => {
 });
 
 
-export { initSale,getOverallSales,getDetailsOfSale, getDateVsRevenue , getDateVsSale,discountUsage};
+export { initSale, getOverallSales, getDetailsOfSale, getDateVsRevenue, getDateVsSale, discountUsage };

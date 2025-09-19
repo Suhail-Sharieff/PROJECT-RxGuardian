@@ -126,7 +126,7 @@ const avgBasketSize = asyncHandler(async (req, res) => {
         FROM sale s
         LEFT JOIN sale_item si ON si.sale_id = s.sale_id
         LEFT JOIN drug d ON d.drug_id = si.drug_id
-        WHERE s.shop_id = ? AND s.date BETWEEN ? AND ?
+        WHERE s.shop_id = ? AND date(s.date) BETWEEN ? AND ?
         GROUP BY s.sale_id
       ) t;
     `;
@@ -156,7 +156,7 @@ const avgItemsPerSale = asyncHandler(async (req, res) => {
         SELECT s.sale_id, COALESCE(SUM(si.quantity),0) AS item_count
         FROM sale s
         LEFT JOIN sale_item si ON si.sale_id = s.sale_id
-        WHERE s.shop_id = ? AND s.date BETWEEN ? AND ?
+        WHERE s.shop_id = ? AND date(s.date) BETWEEN ? AND ?
         GROUP BY s.sale_id
       ) t;
     `;
@@ -185,7 +185,7 @@ const newVsReturning = asyncHandler(async (req, res) => {
       FROM (
         SELECT c.customer_id,
                MIN(s.date) AS firstSaleDate,
-               CASE WHEN MIN(s.date) BETWEEN ? AND ? THEN 1 ELSE 0 END AS is_new
+               CASE WHEN MIN(date(s.date)) BETWEEN ? AND ? THEN 1 ELSE 0 END AS is_new
         FROM sale s
         JOIN customer c ON c.customer_id = s.customer_id
         WHERE s.shop_id = ?
@@ -258,7 +258,7 @@ const avgDaysBetweenCustomerPurchase = asyncHandler(async (req, res) => {
       select avg(avgDaysBetweenCustomerPurchase) as avg from (SELECT customer_id, AVG(days_between) AS avgDaysBetweenCustomerPurchase
       FROM (
         SELECT s.customer_id,
-               DATEDIFF(s.date, LAG(s.date) OVER (PARTITION BY s.customer_id ORDER BY s.date)) AS days_between
+               DATEDIFF(date(s.date), LAG(date(s.date)) OVER (PARTITION BY s.customer_id ORDER BY s.date)) AS days_between
         FROM sale s
         WHERE s.shop_id = ?
       ) t
