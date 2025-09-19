@@ -63,8 +63,8 @@ This repository currently represents the **MVP (Minimum Viable Product)**. Sever
 
 ### 🖼️ System Overview
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/110b6d06-c13d-4c13-9a17-889567670646" width="45%" />
-  <img src="https://github.com/user-attachments/assets/1429f83c-8a75-4b95-a79f-3a9726be72f8" width="45%" />
+
+  <img src="https://github.com/user-attachments/assets/1429f83c-8a75-4b95-a79f-3a9726be72f8" />
 </p>
 
 ---
