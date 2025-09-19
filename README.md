@@ -110,7 +110,103 @@ This repository currently represents the **MVP (Minimum Viable Product)**. Sever
 - Integration with medical insurance providers  
 
 ---
-## Testing locally
+
+## Testing WITHOUT CODE REPO
+- If u havent cloned the repo and just want to see the service using docker which would fetch image from `docker hub`
+- First create a `new folder`, cd into it
+- create `docker-compose.yaml` file which looks like this
+```yaml
+version: "3.9"
+
+services:
+  rx_guardian_mysql_docker_service:
+    image: mysql:8.0
+    container_name: rx_sql
+    restart: always
+    ports:
+      - "${MYSQL_EXTERNAL_PORT}:${MYSQL_INTERNAL_PORT}"  # host:container
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - rx_guradian_docker_data:/var/lib/mysql
+
+  rx_guardian_node_backend_service:
+    image: suhailsharieff/rxguardian:v1.0.1
+    container_name: rx_node
+    restart: always
+    ports:
+      - "${NODE_PORT}:${NODE_INTERNAL_PORT}"
+    environment:
+      MYSQL_HOST: rx_guardian_mysql_docker_service
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      REDIS_HOST: rx_guardian_redis_service
+    depends_on:
+      - rx_guardian_mysql_docker_service
+      - rx_guardian_redis_service
+
+  rx_guardian_redis_service:
+    image: redis/redis-stack:latest
+    container_name: rx_redis
+    restart: always
+    ports:
+      - "${REDIS_EXTERNAL_PORT}:${REDIS_INTERNAL_PORT}"
+
+volumes:
+  rx_guradian_docker_data:
+    driver: local
+```
+- Create `.env` file looking like this
+```.env
+# App
+PORT=8080
+CORS_ORIGIN=*
+
+COMPOSE_PROJECT_NAME=rx_guardian_project_docker
+NODE_ENV=development
+
+# ----------------
+# MySQL
+# ----------------
+MYSQL_DATABASE=rxguardian
+MYSQL_ROOT_PASSWORD=RxGuardian@123
+
+# Container-to-container (internal) — what services use
+MYSQL_HOST=rx_guardian_mysql_docker_service
+MYSQL_INTERNAL_PORT=3306
+
+# Host-to-container (external) — what you use on your laptop
+MYSQL_EXTERNAL_PORT=3306
+
+# MySQL credentials for app
+MYSQL_PASSWORD=RxGuardian@123
+
+# ----------------
+# Redis
+# ----------------
+REDIS_HOST=rx_guardian_redis_service
+REDIS_INTERNAL_PORT=6379
+REDIS_EXTERNAL_PORT=6379
+
+# ----------------
+# Node
+# ----------------
+NODE_PORT=8080
+NODE_INTERNAL_PORT=8080
+
+# ----------------
+# Auth
+# ----------------
+ACCESS_TOKEN_SECRET=MY_ACCESS_TOKEN_SECRET
+ACCESS_TOKEN_EXPIRY=1d
+REFRESH_TOKEN_SECRET=MY_REFRESH_TOKEN_SECRET
+REFRESH_TOKEN_EXPIRY=7d
+```
+- Now just run `docker-compose up`
+- See server logs in terminal or docker desktop
+## Testing locally WITH CODE REPO
 - `docker compose up --build`
 - `nodemon index.js`
 ## 👨‍💻 Contributors
