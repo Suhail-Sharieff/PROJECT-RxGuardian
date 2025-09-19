@@ -1,0 +1,4 @@
+# Use Nginx to serve Flutter web
+FROM nginx:alpine
+COPY . /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
