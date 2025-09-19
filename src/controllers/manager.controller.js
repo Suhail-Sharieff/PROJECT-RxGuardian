@@ -4,6 +4,7 @@ import { asyncHandler } from "../Utils/asyncHandler.utils.js";
 import { buildPaginatedFilters } from "../Utils/paginated_query_builder.js";
 import { redis } from "../Utils/redis.connection.js";
 import { db } from "../Utils/sql_connection.utils.js";
+import { getShopImWorkingIn } from "./shop.controller.js";
 const isManager=asyncHandler(async(req,res)=>{res.status(200).json(new ApiResponse(200,"You have access to manager console!"))})
 const getEmployeeDetails=asyncHandler(
     async(req,res)=>{
@@ -177,5 +178,14 @@ const hirePharmacist=asyncHandler(
     }
 );
 
+const getEmployeesOfMyShop=asyncHandler(
+    async(req,res)=>{
+        try{    
+            const shop_id=await getShopImWorkingIn(req,res)
+            const [rows]=await db.execute(`select p.pharmacist_id,p.name from pharmacist as p  join employee as e on e.pharmacist_id=p.pharmacist_id and e.shop_id=? `,[shop_id])
+            return res.status(200).json(new ApiResponse(200,rows))
+        }catch(err){throw new ApiError(400,err.message)}
+    }
+)
 
-export {isManager,getEmployeeDetails,removeEmployee,updateEmployeeSalary,addEmployee,getAllEmployables,hirePharmacist}
+export {isManager,getEmployeeDetails,removeEmployee,updateEmployeeSalary,addEmployee,getAllEmployables,hirePharmacist,getEmployeesOfMyShop}

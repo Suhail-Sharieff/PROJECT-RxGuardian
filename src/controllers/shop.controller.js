@@ -6,52 +6,52 @@ import { buildPaginatedFilters } from "../Utils/paginated_query_builder.js";
 import { redis } from "../Utils/redis.connection.js";
 
 
-const getAllShopDetails=asyncHandler(
-    async(req,res)=>{
-        try{
-            let { pgNo = 1 } = req.query;
-            if (!pgNo && req.body.pgNo) {
-                pgNo = req.body.pgNo;
-            }
-            const page = parseInt(pgNo, 10);
-            if (isNaN(page) || page < 1) {
-                throw new ApiError(400, "Page number must be a positive integer.");
-            }
-            const limit = 10;
-            const offset = (page - 1) * limit;
+const getAllShopDetails = asyncHandler(
+  async (req, res) => {
+    try {
+      let { pgNo = 1 } = req.query;
+      if (!pgNo && req.body.pgNo) {
+        pgNo = req.body.pgNo;
+      }
+      const page = parseInt(pgNo, 10);
+      if (isNaN(page) || page < 1) {
+        throw new ApiError(400, "Page number must be a positive integer.");
+      }
+      const limit = 10;
+      const offset = (page - 1) * limit;
 
-            const key=`getAllShopDetails:${pgNo}:${offset}`
-            const cache=await redis.get(key)
-            if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched shop details from redis"))
+      const key = `getAllShopDetails:${pgNo}:${offset}`
+      const cache = await redis.get(key)
+      if (cache) return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Fetched shop details from redis"))
 
 
-            const query=`
+      const query = `
             select s.shop_id,s.name as shop_name,s.address,s.phone,p.name as manager_name from shop as s
             left join pharmacist as p
             on pharmacist_id=manager_id
             limit ${limit} offset ${offset}
             `
-            const [rows]=await db.execute(query)
-            if(page>=rows.length) throw new ApiError(400,"End of data!")
+      const [rows] = await db.execute(query)
+      if (page >= rows.length) throw new ApiError(400, "End of data!")
 
-            await redis.set(key,JSON.stringify(rows));
-            await redis.expire(key,20);
-            
-            return res.status(200)
-            .json(
-                new ApiResponse(200,rows,"Fetched all shop details!")
-            )
-        }catch(err){
-            throw new ApiError(400,err.message)
-        }
+      await redis.set(key, JSON.stringify(rows));
+      await redis.expire(key, 20);
+
+      return res.status(200)
+        .json(
+          new ApiResponse(200, rows, "Fetched all shop details!")
+        )
+    } catch (err) {
+      throw new ApiError(400, err.message)
     }
+  }
 )
 
 const getMyShopAnalysis = asyncHandler(
-    async (req, res) => {
-      try {
-        const { pharmacist_id } = req.pharmacist;
-  
+  async (req, res) => {
+    try {
+      const { pharmacist_id } = req.pharmacist;
+
       const getMyShop = `
         SELECT s.shop_id AS myShopId, s.name AS myShopName
         FROM employee AS e
@@ -60,25 +60,25 @@ const getMyShopAnalysis = asyncHandler(
         WHERE p.pharmacist_id = ?
       `;
       const [temp] = await db.execute(getMyShop, [pharmacist_id]);
-  
+
       if (!temp) throw new ApiError(400, "Failed to fetch your shop!");
       if (temp.length === 0)
         throw new ApiError("You are not a part of any pharmacy shop yet!");
-  
+
       const { myShopId, myShopName } = temp[0];
       console.log(
         `getting shop analysis for shop_id ${myShopId} ie ${myShopName}........`
       );
-  
-       const { limit, offset, whereClause, params } = buildPaginatedFilters({
-              req,
-              baseParams: [myShopId],
-              allowedFilters: [
-                { key: "searchManufacturer", column: "m.name", type: "string" },
-                { key: "searchDrugType", column: "d.type", type: "string" },
-              ]
+
+      const { limit, offset, whereClause, params } = buildPaginatedFilters({
+        req,
+        baseParams: [myShopId],
+        allowedFilters: [
+          { key: "searchManufacturer", column: "m.name", type: "string" },
+          { key: "searchDrugType", column: "d.type", type: "string" },
+        ]
       });
-  
+
       const query = `
         SELECT 
           m.name AS manufacturer_name,
@@ -99,15 +99,15 @@ const getMyShopAnalysis = asyncHandler(
         ORDER BY d.type, m.name
         LIMIT ${limit} OFFSET ${offset};
       `;
-      
-      const key=`getMyShopAnalysis:${whereClause}:${limit}:${offset}`
-      const cache=await redis.get(key)
-      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Getch shop analysis from redis"))
-  
+
+      const key = `getMyShopAnalysis:${whereClause}:${limit}:${offset}`
+      const cache = await redis.get(key)
+      if (cache) return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Getch shop analysis from redis"))
+
       const [rows] = await db.execute(query, params);
 
-      await redis.set(key,JSON.stringify(rows))
-      await redis.expire(key,20)
+      await redis.set(key, JSON.stringify(rows))
+      await redis.expire(key, 20)
 
 
       if (!rows) throw new ApiError(400, "Failed to fetch your shop analysis!");
@@ -118,8 +118,8 @@ const getMyShopAnalysis = asyncHandler(
             new ApiResponse(200, [], `No results for your search in ${myShopName}`)
           );
 
-      
-  
+
+
       return res
         .status(200)
         .json(
@@ -129,139 +129,241 @@ const getMyShopAnalysis = asyncHandler(
             `Fetched shop details for ${myShopId}::${myShopName}!`
           )
         );
-    
-      } catch (err) {
-        throw new ApiError(400,`Error ${err.message}`)
-      }
+
+    } catch (err) {
+      throw new ApiError(400, `Error ${err.message}`)
     }
-  );
+  }
+);
 
-const getShopImWorkingIn=
-  async(req,res)=>{
-    try{
-      const {pharmacist_id}=req.pharmacist;
+const getShopImWorkingIn =
+  async (req, res) => {
+    try {
+      const { pharmacist_id } = req.pharmacist;
       // console.log(`your pharmacist :${JSON.stringify(req.pharmacist)}`);
-      
-      const key=`getShopImWorkingIn` 
-      const cache=await redis.get(key)
-      if(cache) return JSON.parse(cache)
 
-      const query=`select e.shop_id from employee as e join pharmacist as p where e.pharmacist_id=? limit 1`
-      const [rows]=await db.execute(query,[pharmacist_id]);
-      if(rows.length===0) throw new ApiError(400,"You do not work anywhere!");
+      const key = `getShopImWorkingIn`
+      const cache = await redis.get(key)
+      if (cache) return JSON.parse(cache)
+
+      const query = `select e.shop_id from employee as e join pharmacist as p where e.pharmacist_id=? limit 1`
+      const [rows] = await db.execute(query, [pharmacist_id]);
+      if (rows.length === 0) throw new ApiError(400, "You do not work anywhere!");
       // console.log(rows);
 
-      await redis.set(key,JSON.stringify(rows[0].shop_id))
-      await redis.expire(key,30)
+      await redis.set(key, JSON.stringify(rows[0].shop_id))
+      await redis.expire(key, 60)
 
 
       return rows[0].shop_id;
-    }catch(err){
-      throw new ApiError(400,`Failed to fetch shop you work in ERROR:${err.message}!`)
+    } catch (err) {
+      throw new ApiError(400, `Failed to fetch shop you work in ERROR:${err.message}!`)
     }
   }
-const getShopNameImWorkingIn=
-  async(req,res)=>{
-    try{
-      const shop_id=await getShopImWorkingIn(req,res);
+const getShopNameImWorkingIn =
+  async (req, res) => {
+    try {
+      const shop_id = await getShopImWorkingIn(req, res);
       // console.log(shop_id);
 
 
-      const key=`getShopNameImWorkingIn` 
-      const cache=await redis.get(key)
-      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched shop name i work from redis!"))
+      const key = `getShopNameImWorkingIn`
+      const cache = await redis.get(key)
+      if (cache) return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Fetched shop name i work from redis!"))
 
 
-      const [rows]=await db.execute(`select name from shop where shop_id=?`,[shop_id]);
+      const [rows] = await db.execute(`select name from shop where shop_id=?`, [shop_id]);
 
-      await redis.set(key,JSON.stringify(rows[0].name))
-      await redis.expire(key,30)
+      await redis.set(key, JSON.stringify(rows[0].name))
+      await redis.expire(key, 60)
 
-      return res.status(200).json(new ApiResponse(200,rows[0].name))
-    }catch(err){
-      throw new ApiError(400,`Failed to fetch shop name you work in ${err.message}!`)
+      return res.status(200).json(new ApiResponse(200, rows[0].name))
+    } catch (err) {
+      throw new ApiError(400, `Failed to fetch shop name you work in ${err.message}!`)
     }
   }
 
-const getMyShopDrugStock=asyncHandler(
-  async(req,res)=>{
-    try{
-      const {pharmacist_id}=req.pharmacist;
-      const shop_id=await getShopImWorkingIn(req,res);
+const getMyShopDrugStock = asyncHandler(
+  async (req, res) => {
+    try {
+      const { pharmacist_id } = req.pharmacist;
+      const shop_id = await getShopImWorkingIn(req, res);
       // console.log(`pharma id = ${pharmacist_id} shop_id=${shop_id}`);
-        const { limit, offset, whereClause, params } = buildPaginatedFilters({
-              req,
-              baseParams: [shop_id],
-              allowedFilters: [
-                { key: "searchManufacturer", column: "m.name", type: "string" },
-                { key: "searchDrugType", column: "d.type", type: "string" },
-                { key: "searchBarcodeType", column: "d.barcode", type: "string" },
-                { key: "searchByName", column: "d.name", type: "string" },
-              ]
+      const { limit, offset, whereClause, params } = buildPaginatedFilters({
+        req,
+        baseParams: [shop_id],
+        allowedFilters: [
+          { key: "searchManufacturer", column: "m.name", type: "string" },
+          { key: "searchDrugType", column: "d.type", type: "string" },
+          { key: "searchBarcodeType", column: "d.barcode", type: "string" },
+          { key: "searchByName", column: "d.name", type: "string" },
+        ]
       });
       // console.log(params);
-      
-      const query=`
-        select 
-        q.drug_id,
-        d.name as  drug_name,
-        d.type as drug_type,
-        d.barcode,
-        d.dose,
-        d.code,
-        d.selling_price as cost,
-        q.quantity as stock_remaining,
-        d.expiry_date,m.name as manufacturer,
-        case when q.quantity<20 then 'Very Low' else 'Available' end as 'stock_availability_status',
-        case when d.expiry_date<now() then 'Expired' else concat('Expires in ',datediff(d.expiry_date,d.production_date),' days') end as 'expiry_status'
-        from 
-        quantity as q  join  shop as s on s.shop_id=q.shop_id 
-        join 
-        drug as d on q.drug_id=d.drug_id
-        join manufacturer as m on d.manufacturer_id=m.manufacturer_id
-        where s.shop_id= ? ${whereClause}
-        order by q.drug_id,q.quantity
-        limit ${limit} offset ${offset}
-      `
 
-      const key=`getMyShopDrugStock:${whereClause}:${limit}:${offset}`
-      const cache=await redis.get(key)
-      if(cache) return res.status(200).json(new ApiResponse(200,JSON.parse(cache),"Fetched frug stock form redis"))
+      const query = `
+  SELECT 
+    q.drug_id,
+    d.name AS drug_name,
+    d.type AS drug_type,
+    d.barcode,
+    d.dose,
+    d.code,
+    d.selling_price AS cost,
+    q.quantity AS stock_remaining,
+    d.expiry_date,
+    m.name AS manufacturer,
+    CASE 
+      WHEN q.quantity <= 0 THEN 'Out of stock'
+      WHEN q.quantity < 20 THEN 'Very Low'
+      ELSE 'Available'
+    END AS stock_availability_status,
+    CASE 
+      WHEN d.expiry_date < NOW() THEN 'Expired'
+      ELSE CONCAT('Expires in ', DATEDIFF(d.expiry_date, d.production_date), ' days')
+    END AS expiry_status
+  FROM 
+    quantity AS q
+    JOIN shop AS s ON s.shop_id = q.shop_id
+    JOIN drug AS d ON q.drug_id = d.drug_id
+    JOIN manufacturer AS m ON d.manufacturer_id = m.manufacturer_id
+  WHERE 
+    s.shop_id = ? ${whereClause}
+  ORDER BY 
+    q.drug_id, q.quantity
+  LIMIT ${limit} OFFSET ${offset}
+`;
 
 
-      const [rows]=await db.execute(query,params);
-      if(rows.length===0) throw new ApiError(400,"Reached end of data!")
+      const key = `getMyShopDrugStock:${whereClause}:${limit}:${offset}`
+      const cache = await redis.get(key)
+      if (cache) return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Fetched frug stock form redis"))
 
-      await redis.set(key,JSON.stringify(rows))
-      await redis.expire(key,60)
+
+      const [rows] = await db.execute(query, params);
+      if (rows.length === 0) throw new ApiError(400, "Reached end of data!")
+
+      await redis.set(key, JSON.stringify(rows))
+      await redis.expire(key, 10)
 
       return res.status(200).json(
-        new ApiResponse(200,rows,"Fetched drug stock successfully!")
+        new ApiResponse(200, rows, "Fetched drug stock successfully!")
       )
-    }catch(err){
-      throw new ApiError(400,err.message);
+    } catch (err) {
+      throw new ApiError(400, err.message);
     }
-    
+
   }
 )
 
- const registerShopAndBecomeManager=asyncHandler(
-    async(req,res)=>{
-        try{
-            const {pharmacist_id}=req.pharmacist;
-            const [already_a_manager]=await db.execute('select * from shop where manager_id=?',[pharmacist_id])
-            if(already_a_manager.length!==0) throw new ApiError(400,`You are already a manager or own another shop!`)
-            const {address,phone,license,name}=req.body;
-            const [license_already_exists]=await db.execute(`select * from shop where license=?`,[license])
-            if(license_already_exists.length!==0) throw new ApiError(400,"This license alerady exists!");
-            const query=`insert into shop (address,phone,manager_id,license,name) values (?,?,?,?,?)`
-            
-            const [rows]=await db.execute(query,[address,phone,pharmacist_id,license,name])
-            return res.status(200).json(new ApiResponse(200,rows,`Registered new shop id=${rows.insertId}`))
-        }catch(err){
-            throw new ApiError(400,err.message)
-        }
-    }
- )
+const registerShopAndBecomeManager = asyncHandler(
+  async (req, res) => {
+    try {
+      const { pharmacist_id } = req.pharmacist;
+      const [already_a_manager] = await db.execute('select * from shop where manager_id=?', [pharmacist_id])
+      if (already_a_manager.length !== 0) throw new ApiError(400, `You are already a manager or own another shop!`)
+      const { address, phone, license, name } = req.body;
+      const [license_already_exists] = await db.execute(`select * from shop where license=?`, [license])
+      if (license_already_exists.length !== 0) throw new ApiError(400, "This license alerady exists!");
+      const query = `insert into shop (address,phone,manager_id,license,name) values (?,?,?,?,?)`
 
-export{getAllShopDetails,getMyShopAnalysis,getShopImWorkingIn,getMyShopDrugStock,registerShopAndBecomeManager,getShopNameImWorkingIn}
+      const [rows] = await db.execute(query, [address, phone, pharmacist_id, license, name])
+      return res.status(200).json(new ApiResponse(200, rows, `Registered new shop id=${rows.insertId}`))
+    } catch (err) {
+      throw new ApiError(400, err.message)
+    }
+  }
+);
+
+
+const getShopBalance = asyncHandler(
+  async (req, res) => {
+    try {
+      const shop_id = await getShopImWorkingIn(req, res);
+      const query = `select balance from balance where shop_id=?`
+
+      const key = `getShopBalance:${shop_id}`
+      const cache = await redis.get(key)
+      if (cache) return res.status(200).json(new ApiResponse(200, JSON.parse(cache), "Getched balance from redis!"))
+
+
+      const [rows] = await db.execute(query, [shop_id]);
+
+      await redis.set(key, JSON.stringify(rows[0]))
+      await redis.expire(key, 10)
+
+      return res.json(new ApiResponse(200, rows[0], "Fetched shop balance!"))
+
+
+    } catch (err) {
+      throw new ApiError(400, err.message)
+    }
+  }
+);
+
+
+const deductBalance = asyncHandler(
+  async (req, res) => {
+    try {
+      const { money } = req.body;
+      if (!money) throw new ApiError(400, "Please provide amount to deduct")
+
+      const shop_id = await getShopImWorkingIn(req, res)
+
+      const temp=`select balance from balance where shop_id=? limit 1`
+      const [tr]=await db.execute(temp,[shop_id])
+      const currBalance=tr[0].balance
+      if(currBalance<money) throw new ApiError(400,`Insufficient balance. Demand=${money}, but balance=${currBalance}`)    
+      
+
+      const query = `update balance set balance=balance-? where shop_id=?`
+      const [rows] = await db.execute(query, [money, shop_id])
+
+      if (rows.affectedRows === 0) throw new ApiError(400, `Failed to deduct shop balance ${err.message}`)
+
+      return res.status(200).json(new ApiResponse(200, rows, `Deducted shop balance by ${money}`))
+
+    } catch (e) {
+
+      throw new ApiError(400, e.message)
+
+
+    }
+
+
+
+
+  }
+)
+const addBalance = asyncHandler(
+  async (req, res) => {
+    try {
+      const { money } = req.body;
+      if (!money) throw new ApiError(400, "Please provide amount to deduct")
+
+      const shop_id = await getShopImWorkingIn(req, res)
+
+      const query = `update balance set balance=balance+? where shop_id=?`
+      const [rows] = await db.execute(query, [money, shop_id])
+
+      if (rows.affectedRows === 0) throw new ApiError(400, `Failed to add shop balance ${err.message}`)
+
+      return res.status(200).json(new ApiResponse(200, rows, `Added shop balance by ${money}`))
+
+    } catch (e) {
+
+      throw new ApiError(400, e.message)
+
+
+    }
+
+
+
+
+  }
+)
+
+export {
+  deductBalance, addBalance,
+  getShopBalance, getAllShopDetails, getMyShopAnalysis, getShopImWorkingIn, getMyShopDrugStock, registerShopAndBecomeManager, getShopNameImWorkingIn
+}
