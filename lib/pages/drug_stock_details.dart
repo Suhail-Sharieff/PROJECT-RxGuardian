@@ -314,7 +314,7 @@ class _DrugStockCard extends StatelessWidget {
     switch (status.toLowerCase()) {
       case 'available':
         return Colors.green;
-      case 'low stock':
+      case 'very low':
         return Colors.orange;
       case 'out of stock':
         return Colors.red;

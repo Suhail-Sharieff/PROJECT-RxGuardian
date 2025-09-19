@@ -510,7 +510,7 @@ class ChatRoomController extends GetxController {
 
   void _debounceStopTyping() {
     _typingTimer?.cancel();
-    _typingTimer = Timer(const Duration(seconds: 2), () {
+    _typingTimer = Timer(const Duration(seconds: 4), () {
       _chatController.socket.emit('stop_typing', {'room_id': room.roomId});
     });
   }
@@ -781,10 +781,22 @@ class RoomListView extends StatelessWidget {
                               color: theme.primaryColor,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Text(
-                              room.unreadCount.toString(),
-                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                            ),
+                            child: Container(
+                              padding: const EdgeInsets.all(4), // space inside circle
+                              decoration: const BoxDecoration(
+                                color: Colors.red, // background color of circle
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                room.unreadCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                            ,
                           )
                         else
                         // Use a placeholder to keep alignment consistent when there's no badge
@@ -1297,8 +1309,8 @@ class MemberManagementSheet extends StatelessWidget {
                           children: [
                             Obx(() => IconButton(
                               icon: Icon(
-                                member.isMuted.value ? Icons.volume_off : Icons.volume_up,
-                                color: member.isMuted.value ? Colors.orange.shade700 : Colors.grey,
+                                member.isMuted.value ? Icons.block_rounded : Icons.check_circle_sharp,
+                                color: member.isMuted.value ? Colors.orange.shade700 : Colors.green,
                               ),
                               tooltip: member.isMuted.value ? 'Unmute Member' : 'Mute Member',
                               onPressed: () => controller.toggleMuteStatus(member),
