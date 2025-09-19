@@ -63,7 +63,7 @@ class SocketManager {
         await this.joinUserRooms(socket, pharmacist_id);
         this.broadcastUserStatus(pharmacist_id, 'online');
     }
-    
+
     async joinUserRooms(socket, pharmacist_id) {
         try {
             const [rooms] = await db.execute(
@@ -120,7 +120,7 @@ class SocketManager {
         });
 
         // --- MESSAGING ---
-      // --- MESSAGING ---
+        // --- MESSAGING ---
         socket.on('send_message', async (data) => {
             const { room_id, message_text, message_type = 'text', reply_to_message_id = null } = data;
             try {
@@ -172,29 +172,29 @@ class SocketManager {
             }
         });
         // In your main socket connection file
-socket.on('mark_room_as_read', async (data) => {
-    const { room_id } = data;
-    // Get the authenticated user's ID from the socket object
-    const pharmacist_id = socket.pharmacist.pharmacist_id; 
+        socket.on('mark_room_as_read', async (data) => {
+            const { room_id } = data;
+            // Get the authenticated user's ID from the socket object
+            const pharmacist_id = socket.pharmacist.pharmacist_id;
 
-    if (!room_id || !pharmacist_id) {
-        console.error("mark_room_as_read failed: missing room_id or pharmacist_id");
-        return;
-    }
+            if (!room_id || !pharmacist_id) {
+                console.error("mark_room_as_read failed: missing room_id or pharmacist_id");
+                return;
+            }
 
-    try {
-        // Update the timestamp to the current time
-        await db.execute(
-            `UPDATE chat_room_members 
+            try {
+                // Update the timestamp to the current time
+                await db.execute(
+                    `UPDATE chat_room_members 
              SET last_read_timestamp = CURRENT_TIMESTAMP 
              WHERE room_id = ? AND pharmacist_id = ?`,
-            [room_id, pharmacist_id]
-        );
-        console.log(`User ${pharmacist_id} marked room ${room_id} as read.`);
-    } catch (error) {
-        console.error("Failed to mark room as read:", error);
-    }
-});
+                    [room_id, pharmacist_id]
+                );
+                console.log(`User ${pharmacist_id} marked room ${room_id} as read.`);
+            } catch (error) {
+                console.error("Failed to mark room as read:", error);
+            }
+        });
         // --- TYPING INDICATORS ---
         // FIX: Consolidated duplicated handlers into one clean implementation.
         socket.on('start_typing', ({ room_id }) => {
@@ -219,7 +219,7 @@ socket.on('mark_room_as_read', async (data) => {
             try {
                 await db.execute("DELETE FROM message_reactions WHERE message_id = ? AND pharmacist_id = ?", [message_id, pharmacist_id]);
                 await db.execute("INSERT INTO message_reactions (message_id, pharmacist_id, emoji) VALUES (?, ?, ?)", [message_id, pharmacist_id, emoji]);
-                
+
                 this.io.to(`room_${room_id}`).emit('reaction_added', { message_id, pharmacist_id, name, emoji });
             } catch (error) {
                 socket.emit('error', { message: 'Failed to add reaction' });
@@ -229,7 +229,7 @@ socket.on('mark_room_as_read', async (data) => {
         socket.on('remove_reaction', async ({ message_id, room_id }) => {
             try {
                 await db.execute("DELETE FROM message_reactions WHERE message_id = ? AND pharmacist_id = ?", [message_id, pharmacist_id]);
-                
+
                 this.io.to(`room_${room_id}`).emit('reaction_removed', { message_id, pharmacist_id, name });
             } catch (error) {
                 socket.emit('error', { message: 'Failed to remove reaction' });
@@ -245,13 +245,13 @@ socket.on('mark_room_as_read', async (data) => {
                      ON DUPLICATE KEY UPDATE read_at = CURRENT_TIMESTAMP`,
                     [message_id, pharmacist_id]
                 );
-                
+
                 this.io.to(`room_${room_id}`).emit('message_read', { message_id, pharmacist_id, name });
             } catch (error) {
-                 console.error('Error marking message as read:', error);
+                console.error('Error marking message as read:', error);
             }
         });
-        
+
         // --- STATUS UPDATES ---
         socket.on('update_status', async ({ status, current_room_id }) => {
             await this.updateOnlineStatus(pharmacist_id, socket.id, status, current_room_id);

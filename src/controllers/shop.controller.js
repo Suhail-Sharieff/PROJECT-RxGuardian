@@ -202,27 +202,38 @@ const getMyShopDrugStock = asyncHandler(
       // console.log(params);
 
       const query = `
-        select 
-        q.drug_id,
-        d.name as  drug_name,
-        d.type as drug_type,
-        d.barcode,
-        d.dose,
-        d.code,
-        d.selling_price as cost,
-        q.quantity as stock_remaining,
-        d.expiry_date,m.name as manufacturer,
-        case when q.quantity<20 then 'Very Low' else 'Available' end as 'stock_availability_status',
-        case when d.expiry_date<now() then 'Expired' else concat('Expires in ',datediff(d.expiry_date,d.production_date),' days') end as 'expiry_status'
-        from 
-        quantity as q  join  shop as s on s.shop_id=q.shop_id 
-        join 
-        drug as d on q.drug_id=d.drug_id
-        join manufacturer as m on d.manufacturer_id=m.manufacturer_id
-        where s.shop_id= ? ${whereClause}
-        order by q.drug_id,q.quantity
-        limit ${limit} offset ${offset}
-      `
+  SELECT 
+    q.drug_id,
+    d.name AS drug_name,
+    d.type AS drug_type,
+    d.barcode,
+    d.dose,
+    d.code,
+    d.selling_price AS cost,
+    q.quantity AS stock_remaining,
+    d.expiry_date,
+    m.name AS manufacturer,
+    CASE 
+      WHEN q.quantity <= 0 THEN 'Out of stock'
+      WHEN q.quantity < 20 THEN 'Very Low'
+      ELSE 'Available'
+    END AS stock_availability_status,
+    CASE 
+      WHEN d.expiry_date < NOW() THEN 'Expired'
+      ELSE CONCAT('Expires in ', DATEDIFF(d.expiry_date, d.production_date), ' days')
+    END AS expiry_status
+  FROM 
+    quantity AS q
+    JOIN shop AS s ON s.shop_id = q.shop_id
+    JOIN drug AS d ON q.drug_id = d.drug_id
+    JOIN manufacturer AS m ON d.manufacturer_id = m.manufacturer_id
+  WHERE 
+    s.shop_id = ? ${whereClause}
+  ORDER BY 
+    q.drug_id, q.quantity
+  LIMIT ${limit} OFFSET ${offset}
+`;
+
 
       const key = `getMyShopDrugStock:${whereClause}:${limit}:${offset}`
       const cache = await redis.get(key)
