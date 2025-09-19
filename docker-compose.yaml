@@ -1,36 +1,49 @@
-version: "3.8"
+version: "3.9"
 
 services:
-  rx_guardian_mysql_docker_service:
-    image: mysql:8.0
-    container_name: rx_sql
+  backend:
+    image: suhailsharieff/rxguardian:backend_only
+    container_name: rxguardian_backend
+    restart: always
     ports:
-      - "${MYSQL_EXTERNAL_PORT}:${MYSQL_INTERNAL_PORT}"   # host:container (9696:3306)
-    env_file: .env
+      - "${NODE_PORT}:${NODE_INTERNAL_PORT}"   # e.g., 8080:8080
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-    volumes:
-      - rx_guradian_docker_data:/var/lib/mysql
-
-  rx_guradian_node_backend_service:
-    build: .
-    container_name: rx_node
-    ports:
-      - "${NODE_PORT}:${NODE_INTERNAL_PORT}"
-    env_file: .env
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      REDIS_HOST: redis
     depends_on:
-      - rx_guardian_mysql_docker_service
-      - rx_guardian_redis_service
-    volumes:
-      - .:/app
+      - mysql
+      - redis
 
-  rx_guardian_redis_service:
+  frontend:
+    image: suhailsharieff/rxguardian:frontend_only
+    container_name: rxguardian_frontend
+    restart: always
+    ports:
+      - "${FRONTEND_PORT}:80"    # e.g., 3000:80
+    depends_on:
+      - backend
+
+  mysql:
+    image: mysql:8.0
+    container_name: rxguardian_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "${MYSQL_EXTERNAL_PORT}:${MYSQL_INTERNAL_PORT}"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
     image: redis/redis-stack:latest
-    container_name: rx_redis
+    container_name: rxguardian_redis
+    restart: always
     ports:
       - "${REDIS_EXTERNAL_PORT}:${REDIS_INTERNAL_PORT}"
 
 volumes:
-  rx_guradian_docker_data:
-    driver: local
+  mysql_data:
