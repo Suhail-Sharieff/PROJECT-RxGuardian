@@ -131,7 +131,7 @@ services:
       - rx_guradian_docker_data:/var/lib/mysql
 
   rx_guardian_node_backend_service:
-    image: suhailsharieff/rxguardian:v1.0.1
+    image: suhailsharieff/rxguardian:backend_only
     container_name: rx_node
     restart: always
     ports:
