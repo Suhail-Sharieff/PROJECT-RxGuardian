@@ -18,7 +18,7 @@ services:
       - redis
 
   frontend:
-    image: suhailsharieff/rxguardian:frontend_only
+    image: suhailsharieff/rxguardian:frontend__only
     container_name: rxguardian_frontend
     restart: always
     ports:
