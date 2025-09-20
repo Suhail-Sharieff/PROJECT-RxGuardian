@@ -61,32 +61,32 @@ app.use(inspector)
 
 //configuring routes
 import { pharmacistRouter } from "./routes/pharmacist.routes.js"
-app.use('/auth',pharmacistRouter)
+app.use('/api/auth',pharmacistRouter)
 
 
 import { manufacturerRoute } from "./routes/manufacturer.routes.js"
-app.use('/manufacturer',manufacturerRoute)
+app.use('/api/manufacturer',manufacturerRoute)
 
 import { shopRouter } from "./routes/shop.routes.js"
-app.use('/shop',shopRouter)
+app.use('/api/shop',shopRouter)
 
 import { drugRouter } from "./routes/drug.router.js"
-app.use('/drug',drugRouter)
+app.use('/api/drug',drugRouter)
 
 
 import { saleRouter } from "./routes/sale.routes.js"
-app.use('/sale',saleRouter)
+app.use('/api/sale',saleRouter)
 
 
 import { managerRouter } from "./routes/manager.routes.js"
-app.use('/manager',managerRouter)
+app.use('/api/manager',managerRouter)
 
 
 import { customerRouter } from "./routes/customer.route.js"
-app.use('/customer',customerRouter)
+app.use('/api/customer',customerRouter)
 
 import { chatRouter } from "./routes/chat.routes.js"
-app.use('/chat',chatRouter)
+app.use('/api/chat',chatRouter)
 
 import { ApiError } from "./Utils/Api_Error.utils.js"
 app.use((err, req, res, next) => {
