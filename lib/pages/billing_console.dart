@@ -79,7 +79,7 @@ class BillingDataController extends GetxController {
 
   Future<List<dynamic>> searchDrugs(Map<String, String> queryParams) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/shop/getMyShopDrugStock', queryParams);
+    var url = Uri.http(main_uri, '/api/shop/getMyShopDrugStock', queryParams);
     try {
       var res = await http.get(url, headers: {'authorization': 'Bearer $accessToken'});
       if (res.statusCode == 200) {
@@ -94,7 +94,7 @@ class BillingDataController extends GetxController {
 
   Future<Map<String, dynamic>> initSale(List<Map<String, dynamic>> saleItems, double totalDiscount, int customerId) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/sale/initSale');
+    var url = Uri.http(main_uri, '/api/sale/initSale');
     try {
       var res = await http.post(
         url,
@@ -124,7 +124,7 @@ class CustomerDataController extends GetxController {
 
   Future<List<Customer>> getCustomerByPhone(String phone) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/customer/getCutomerByPhone', {'searchByPhone': phone});
+    var url = Uri.http(main_uri, '/api/customer/getCutomerByPhone', {'searchByPhone': phone});
     try {
       var res = await http.get(url, headers: {'authorization': 'Bearer $accessToken'});
       if (res.statusCode == 200) {
@@ -141,7 +141,7 @@ class CustomerDataController extends GetxController {
   // UPDATED: This function now correctly handles the new API response.
   Future<Customer> createCustomer(String name, String phone) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/customer/createCustomer');
+    var url = Uri.http(main_uri, '/api/customer/createCustomer');
     try {
       var res = await http.post(
         url,
@@ -405,7 +405,7 @@ class BillingUIController extends GetxController {
 
 
       final accessToken=Get.find<AuthController>().accessToken;
-      var url=Uri.http(main_uri,'/shop/addBalance');
+      var url=Uri.http(main_uri,'/api/shop/addBalance');
       var res = await http.patch(
         url,
         headers: {

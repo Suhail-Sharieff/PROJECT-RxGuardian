@@ -66,7 +66,7 @@ class PharmacyDataController extends GetxController {
       Map<String, String> queryParams) async {
     final accessToken = authController.accessToken;
     // UPDATED: Endpoint changed to match the backend route
-    var url = Uri.http(main_uri, '/shop/getMyShopDrugStock', queryParams);
+    var url = Uri.http(main_uri, '/api/shop/getMyShopDrugStock', queryParams);
 
     try {
       var res = await http.get(url, headers: {

@@ -102149,7 +102149,7 @@ $S:618}
 A.Di.prototype={
 Ix(){var s=0,r=A.H(t.y),q,p=2,o=[],n=this,m,l,k,j,i,h
 var $async$Ix=A.C(function(a,b){if(a===1){o.push(b)
-s=p}while(true)switch(s){case 0:i=A.df("http","192.168.1.2:8080","/manager",null)
+s=p}while(true)switch(s){case 0:i=A.df("http",window.location.host,"/manager",null)
 p=4
 k=t.N
 s=7
@@ -102186,7 +102186,7 @@ s=1
 break}s=7
 return A.I($.a8N().Fh(d,f),$async$wo)
 case 7:m=a1
-l=A.df("http","192.168.1.2:8080","/auth/register",null)
+l=A.df("http",window.location.host,"/auth/register",null)
 j=t.N
 s=8
 return A.I(A.wt(l,A.T(["name",e,"dob",c,"address",a,"phone",g,"password",f,"email",d],j,j),A.T(["authorization","Bearer "+A.j(n.ay)],j,j)),$async$wo)
@@ -102228,7 +102228,7 @@ q=B.Fz
 s=1
 break}A.h1("Firebase sign-in successful and email is verified.","")
 A.h1("Signing in with backend server...","")
-l=A.df("http","192.168.1.2:8080","/auth/login",null)
+l=A.df("http",window.location.host,"/auth/login",null)
 b=t.N
 s=8
 return A.I(A.wt(l,A.T(["password",a3,"email",a2],b,b),null).I6(B.rI),$async$q7)
@@ -102294,7 +102294,7 @@ if(l==null||J.bf(l)===0){A.h1("No refresh token found. User is not logged in.","
 q=!1
 s=1
 break}A.h1("Found refresh token. Attempting to restore session...","")
-k=A.df("http","192.168.1.2:8080","/auth/refresh-token",null)
+k=A.df("http",window.location.host,"/auth/refresh-token",null)
 d=t.N
 s=8
 return A.I(A.wt(k,null,A.T(["Content-Type","application/json","Authorization","Bearer "+A.j(l)],d,d)).I6(B.rI),$async$vR)
@@ -102351,7 +102351,7 @@ case 7:n=c
 n.a.E(0,"refreshToken")
 s=8
 return A.I($.aPS().E(0,"flutter.refreshToken"),$async$pD)
-case 8:m=A.df("http","192.168.1.2:8080","/auth/logout",null)
+case 8:m=A.df("http",window.location.host,"/auth/logout",null)
 k=t.N
 s=9
 return A.I(A.wt(m,null,A.T(["authorization","Bearer "+A.j(o.ay)],k,k)),$async$pD)
@@ -102377,7 +102377,7 @@ Br(a){return this.aa9(a)},
 aa9(a){var s=0,r=A.H(t.a),q,p=2,o=[],n=this,m,l,k,j,i,h
 var $async$Br=A.C(function(b,c){if(b===1){o.push(c)
 s=p}while(true)switch(s){case 0:p=4
-m=A.df("http","192.168.1.2:8080","/auth/getCurrPharmacistProfile",null)
+m=A.df("http",window.location.host,"/auth/getCurrPharmacistProfile",null)
 j=t.N
 s=7
 return A.I(A.hN(m,A.T(["authorization","Bearer "+A.j(n.ay)],j,j)),$async$Br)
@@ -102408,7 +102408,7 @@ C3(){var s=0,r=A.H(t.N),q,p=this,o,n
 var $async$C3=A.C(function(a,b){if(a===1)return A.E(b,r)
 while(true)switch(s){case 0:o=t.N
 s=3
-return A.I(A.hN(A.df("http","192.168.1.2:8080","/shop/getShopName",null),A.T(["authorization","Bearer "+A.j(p.ay)],o,o)),$async$C3)
+return A.I(A.hN(A.df("http",window.location.host,"/shop/getShopName",null),A.T(["authorization","Bearer "+A.j(p.ay)],o,o)),$async$C3)
 case 3:n=b
 q=J.av(B.O.dJ(A.d4(A.d3(n.e)).cl(n.w),null),"data")
 s=1
@@ -102498,7 +102498,7 @@ ji(a,b){return this.aoa(a,b)},
 aoa(a,b){var s=0,r=A.H(t.z),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$ji=A.C(function(c,d){if(c===1){o.push(d)
 s=p}while(true)switch(s){case 0:i=n.ax.ay
-h=A.df("http","192.168.1.2:8080",a,b)
+h=A.df("http",window.location.host,a,b)
 p=4
 k=t.N
 s=7
@@ -103143,7 +103143,7 @@ BN(a){return this.ab1(a)},
 ab1(a){var s=0,r=A.H(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$BN=A.C(function(b,c){if(b===1){o.push(c)
 s=p}while(true)switch(s){case 0:i=n.ax.ay
-h=A.df("http","192.168.1.2:8080","/shop/getMyShopDrugStock",a)
+h=A.df("http",window.location.host,"/shop/getMyShopDrugStock",a)
 p=4
 k=t.N
 s=7
@@ -103173,7 +103173,7 @@ Gv(a,b,c){return this.aJ1(a,b,c)},
 aJ1(a,b,c){var s=0,r=A.H(t.a),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$Gv=A.C(function(d,a0){if(d===1){o.push(a0)
 s=p}while(true)switch(s){case 0:g=n.ax.ay
-f=A.df("http","192.168.1.2:8080","/sale/initSale",null)
+f=A.df("http",window.location.host,"/sale/initSale",null)
 p=4
 j=t.N
 i=A.T(["authorization","Bearer "+A.j(g),"Content-Type","application/json"],j,j)
@@ -103208,7 +103208,7 @@ aaa(a){var s=0,r=A.H(t._l),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f
 var $async$Bs=A.C(function(b,c){if(b===1){o.push(c)
 s=p}while(true)switch(s){case 0:i=n.ax.ay
 h=t.N
-g=A.df("http","192.168.1.2:8080","/customer/getCutomerByPhone",A.T(["searchByPhone",a],h,t.z))
+g=A.df("http",window.location.host,"/customer/getCutomerByPhone",A.T(["searchByPhone",a],h,t.z))
 p=4
 s=7
 return A.I(A.hN(g,A.T(["authorization","Bearer "+A.j(i)],h,h)),$async$Bs)
@@ -103239,7 +103239,7 @@ Fb(a,b){return this.aFg(a,b)},
 aFg(a,b){var s=0,r=A.H(t.Ea),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d
 var $async$Fb=A.C(function(c,a0){if(c===1){o.push(a0)
 s=p}while(true)switch(s){case 0:f=n.ax.ay
-e=A.df("http","192.168.1.2:8080","/customer/createCustomer",null)
+e=A.df("http",window.location.host,"/customer/createCustomer",null)
 p=4
 i=t.N
 h=A.T(["authorization","Bearer "+A.j(f),"Content-Type","application/json"],i,i)
@@ -103412,7 +103412,7 @@ a=t.N
 n.k1.sm(A.T(["sale_id",J.av(l,"sale_id"),"shop_name",j,"customer_name",a1.gm().b,"items",A.k2(c,!0,t.yQ),"subtotal",n.gqa(),"item_discounts",n.gpT(),"gst_rate",n.go.gm(),"gst_amount",n.gIR(),"final_discount",n.gG1(),"grand_total",n.gIQ(),"date",new A.aX(Date.now(),0,!1)],a,t.z))
 c=$.al
 i=(c==null?$.al=B.I:c).cr(null,b).ay
-h=A.df("http","192.168.1.2:8080","/shop/addBalance",null)
+h=A.df("http",window.location.host,"/shop/addBalance",null)
 a1=A.T(["authorization","Bearer "+A.j(i),"Content-Type","application/json"],a,a)
 s=9
 return A.I(A.aPg(h,B.O.lu(A.T(["money",n.gIQ()],a,t.i),null),a1),$async$uW)
@@ -103832,7 +103832,7 @@ if(c.length!==0)e.n(0,"searchDrug",c)
 if(a1.length!==0)e.n(0,"searchManufacturer",a1)
 if(a0.length!==0)e.n(0,"searchDrugType",a0)
 if(b.length!==0)e.n(0,"searchBarcode",b)
-m=A.df("http","192.168.1.2:8080","/drug/getDrugAndManufacturer",e)
+m=A.df("http",window.location.host,"/drug/getDrugAndManufacturer",e)
 p=4
 s=7
 return A.I(A.hN(m,A.T(["authorization","Bearer "+A.j(g)],f,f)),$async$z8)
@@ -103906,7 +103906,7 @@ s=p}while(true)switch(s){case 0:$.a7()
 e=$.al
 if(e==null)e=$.al=B.I
 m=e.cr(null,t.F).ay
-l=A.df("http","192.168.1.2:8080","/drug/addDrugToStock",null)
+l=A.df("http",window.location.host,"/drug/addDrugToStock",null)
 p=4
 e=t.N
 d=A.T(["authorization","Bearer "+A.j(m),"Content-Type","application/json"],e,e)
@@ -104145,7 +104145,7 @@ BD(a){return this.aaB(a)},
 aaB(a){var s=0,r=A.H(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$BD=A.C(function(b,c){if(b===1){o.push(c)
 s=p}while(true)switch(s){case 0:g=n.ax.ay
-f=A.df("http","192.168.1.2:8080","/shop/getMyShopDrugStock",a)
+f=A.df("http",window.location.host,"/shop/getMyShopDrugStock",a)
 p=4
 i=t.N
 s=7
@@ -104354,7 +104354,7 @@ Bz(a){return this.aai(a)},
 aai(a){var s=0,r=A.H(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$Bz=A.C(function(b,c){if(b===1){o.push(c)
 s=p}while(true)switch(s){case 0:g=n.ax.ay
-f=A.df("http","192.168.1.2:8080","/manager/getEmployeeDetails",a)
+f=A.df("http",window.location.host,"/manager/getEmployeeDetails",a)
 p=4
 i=t.N
 s=7
@@ -104388,7 +104388,7 @@ Iq(a,b){return this.aNO(a,b)},
 aNO(a,b){var s=0,r=A.H(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g,f
 var $async$Iq=A.C(function(c,d){if(c===1){p.push(d)
 s=q}while(true)switch(s){case 0:h=o.ax.ay
-g=A.df("http","192.168.1.2:8080","/manager/updateEmployeeSalary",null)
+g=A.df("http",window.location.host,"/manager/updateEmployeeSalary",null)
 q=3
 k=t.N
 j=A.T(["authorization","Bearer "+A.j(h),"Content-Type","application/json"],k,k)
@@ -104418,7 +104418,7 @@ HZ(a){return this.aMH(a)},
 aMH(a){var s=0,r=A.H(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g
 var $async$HZ=A.C(function(b,c){if(b===1){p.push(c)
 s=q}while(true)switch(s){case 0:i=o.ax.ay
-h=A.df("http","192.168.1.2:8080","/manager/removeEmployee/"+a,null)
+h=A.df("http",window.location.host,"/manager/removeEmployee/"+a,null)
 q=3
 k=t.N
 s=6
@@ -104792,7 +104792,7 @@ By(a){return this.aah(a)},
 aah(a){var s=0,r=A.H(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$By=A.C(function(b,c){if(b===1){o.push(c)
 s=p}while(true)switch(s){case 0:g=n.ax.ay
-f=A.df("http","192.168.1.2:8080","/manager/getAllEmployables",a)
+f=A.df("http",window.location.host,"/manager/getAllEmployables",a)
 p=4
 i=t.N
 s=7
@@ -104826,7 +104826,7 @@ Gq(a){return this.aIH(a)},
 aIH(a){var s=0,r=A.H(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g,f
 var $async$Gq=A.C(function(b,c){if(b===1){p.push(c)
 s=q}while(true)switch(s){case 0:h=o.ax.ay
-g=A.df("http","192.168.1.2:8080","/manager/hirePharmacist",null)
+g=A.df("http",window.location.host,"/manager/hirePharmacist",null)
 q=3
 k=t.N
 j=A.T(["authorization","Bearer "+A.j(h),"Content-Type","application/json"],k,k)
@@ -105271,7 +105271,7 @@ HW(a){return this.aMw(a)},
 aMw(a){var s=0,r=A.H(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g
 var $async$HW=A.C(function(b,c){if(b===1){p.push(c)
 s=q}while(true)switch(s){case 0:i=o.ax.ay
-h=A.df("http","192.168.1.2:8080","/shop/registerShop",null)
+h=A.df("http",window.location.host,"/shop/registerShop",null)
 q=3
 k=t.N
 k=A.T(["authorization","Bearer "+A.j(i),"Content-Type","application/json"],k,k)
@@ -105389,7 +105389,7 @@ BB(a){return this.aax(a)},
 aax(a){var s=0,r=A.H(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$BB=A.C(function(b,c){if(b===1){o.push(c)
 s=p}while(true)switch(s){case 0:i=n.ax.ay
-h=A.df("http","192.168.1.2:8080","/sale/getOverallSales",a)
+h=A.df("http",window.location.host,"/sale/getOverallSales",a)
 p=4
 k=t.N
 s=7
@@ -105419,7 +105419,7 @@ Bw(a){return this.aaf(a)},
 aaf(a){var s=0,r=A.H(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$Bw=A.C(function(b,c){if(b===1){o.push(c)
 s=p}while(true)switch(s){case 0:i=n.ax.ay
-h=A.df("http","192.168.1.2:8080","/sale/getDetailsOfSale/"+a,null)
+h=A.df("http",window.location.host,"/sale/getDetailsOfSale/"+a,null)
 p=4
 k=t.N
 s=7
@@ -105879,8 +105879,8 @@ A.x3.prototype={
 j0(){this.ld()
 this.am2()
 this.ze()},
-am2(){var s,r,q,p,o,n="http://192.168.1.2:8080",m=null,l="query",k=this.ay.ay,j=t.N,i=t.z,h=A.T(["transports",A.b(["websocket"],t.s),"autoConnect",!0,"auth",A.T(["token",k],j,t.O)],j,i),g=A.hF(n,0,m),f=g.ghi()+"://"+g.gmp()+":"+g.grN(),e=g.gfg(),d=$.aOo.aw(f)&&$.aOo.h(0,f).d.aw(e),c=J.e(h.h(0,"forceNew"),!0)||J.e(h.h(0,"force new connection"),!0)||!1===h.h(0,"multiplex")||d,b=A.bm("io")
-if(c){$.b4K().br(B.v,"ignoring socket cache for http://192.168.1.2:8080",m,m)
+am2(){var s,r,q,p,o,n="http://window.location.host",m=null,l="query",k=this.ay.ay,j=t.N,i=t.z,h=A.T(["transports",A.b(["websocket"],t.s),"autoConnect",!0,"auth",A.T(["token",k],j,t.O)],j,i),g=A.hF(n,0,m),f=g.ghi()+"://"+g.gmp()+":"+g.grN(),e=g.gfg(),d=$.aOo.aw(f)&&$.aOo.h(0,f).d.aw(e),c=J.e(h.h(0,"forceNew"),!0)||J.e(h.h(0,"force new connection"),!0)||!1===h.h(0,"multiplex")||d,b=A.bm("io")
+if(c){$.b4K().br(B.v,"ignoring socket cache for http://window.location.host",m,m)
 b.b=A.aXi(h,n)}else{s=$.aOo.h(0,f)
 if(s==null){s=A.aXi(h,n)
 $.aOo.n(0,f,s)}b.b=s}if(g.gmC().length!==0&&h.h(0,l)==null)h.n(0,l,g.gmC())
@@ -105907,7 +105907,7 @@ var $async$Fe=A.C(function(b,c){if(b===1){p.push(c)
 s=q}while(true)switch(s){case 0:g=$.a7()
 A.F0(g,B.em,!1,t.z)
 q=3
-n=A.df("http","192.168.1.2:8080","/chat/rooms",null)
+n=A.df("http",window.location.host,"/chat/rooms",null)
 j=t.N
 i=A.T(["Authorization","Bearer "+A.j(o.ay.ay),"Content-Type","application/json"],j,j)
 s=6
@@ -105937,7 +105937,7 @@ ze(){var s=0,r=A.H(t.H),q=1,p=[],o=[],n=this,m,l,k,j,i,h,g
 var $async$ze=A.C(function(a,b){if(a===1){p.push(b)
 s=q}while(true)switch(s){case 0:q=3
 n.CW.sm(!0)
-m=A.df("http","192.168.1.2:8080","/chat/rooms",null)
+m=A.df("http",window.location.host,"/chat/rooms",null)
 i=t.N
 s=6
 return A.I(A.hN(m,A.T(["Authorization","Bearer "+A.j(n.ay.ay)],i,i)),$async$ze)
@@ -106038,7 +106038,7 @@ g===$&&A.a()
 f=m.ax.a
 e=t.N
 g.nq("join_room",A.T(["room_id",f],e,t.S))
-l=A.df("http","192.168.1.2:8080","/chat/rooms/"+f+"/messages",A.T(["limit","50"],e,t.z))
+l=A.df("http",window.location.host,"/chat/rooms/"+f+"/messages",A.T(["limit","50"],e,t.z))
 f=m.ch
 s=7
 return A.I(A.hN(l,A.T(["Authorization","Bearer "+A.j(f.ay)],e,e)),$async$Dr)
@@ -106098,7 +106098,7 @@ zd(){var s=0,r=A.H(t.H),q=1,p=[],o=[],n=this,m,l,k,j,i,h,g
 var $async$zd=A.C(function(a,b){if(a===1){p.push(b)
 s=q}while(true)switch(s){case 0:q=3
 n.dy.sm(!0)
-m=A.df("http","192.168.1.2:8080","/chat/rooms/"+n.ax.a+"/members",null)
+m=A.df("http",window.location.host,"/chat/rooms/"+n.ax.a+"/members",null)
 i=t.N
 s=6
 return A.I(A.hN(m,A.T(["Authorization","Bearer "+A.j(n.ch.ay)],i,i)),$async$zd)
@@ -106129,7 +106129,7 @@ EB(a){return this.aDb(a)},
 aDb(a){var s=0,r=A.H(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g
 var $async$EB=A.C(function(b,c){if(b===1){p.push(c)
 s=q}while(true)switch(s){case 0:q=3
-n=A.df("http","192.168.1.2:8080","/chat/rooms/"+o.ax.a+"/addMemberToRoom",null)
+n=A.df("http",window.location.host,"/chat/rooms/"+o.ax.a+"/addMemberToRoom",null)
 j=t.N
 i=A.T(["Authorization","Bearer "+A.j(o.ch.ay),"Content-Type","application/json"],j,j)
 s=6
@@ -106156,7 +106156,7 @@ I_(a){return this.aMK(a)},
 aMK(a){var s=0,r=A.H(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g
 var $async$I_=A.C(function(b,c){if(b===1){p.push(c)
 s=q}while(true)switch(s){case 0:q=3
-n=A.df("http","192.168.1.2:8080","/chat/rooms/"+o.ax.a+"/members/"+a+"/removeMemberFromRoom",null)
+n=A.df("http",window.location.host,"/chat/rooms/"+o.ax.a+"/members/"+a+"/removeMemberFromRoom",null)
 j=t.N
 s=6
 return A.I(A.aTW(n,A.T(["Authorization","Bearer "+A.j(o.ch.ay)],j,j)),$async$I_)
@@ -106192,7 +106192,7 @@ s=q}while(true)switch(s){case 0:h=a.e
 g=!h.gm()
 f=g?"mute":"unmute"
 q=3
-n=A.df("http","192.168.1.2:8080","/chat/rooms/"+o.ax.a+"/members/"+a.a+"/"+A.j(f),null)
+n=A.df("http",window.location.host,"/chat/rooms/"+o.ax.a+"/members/"+a.a+"/"+A.j(f),null)
 j=t.N
 s=6
 return A.I(A.aPg(n,null,A.T(["Authorization","Bearer "+A.j(o.ch.ay)],j,j)),$async$Id)
@@ -106573,7 +106573,7 @@ if(b==null)b=$.al=B.I
 m=b.cr(null,t.F)
 l=A.b([],t.or)
 p=4
-k=A.df("http","192.168.1.2:8080","/manager/getEmployeesOfMyShop",null)
+k=A.df("http",window.location.host,"/manager/getEmployeesOfMyShop",null)
 b=t.N
 s=7
 return A.I(A.hN(k,A.T(["Authorization","Bearer "+A.j(m.ay)],b,b)),$async$E2)
@@ -106852,7 +106852,7 @@ if(a.length!==0)J.co(j,"searchManufacturer",a)
 a=m.dx.a.a
 if(a.length!==0)J.co(j,"searchDrugType",a)
 i=j
-h=A.df("http","192.168.1.2:8080","/shop/getMyShopAnalysis",i)
+h=A.df("http",window.location.host,"/shop/getMyShopAnalysis",i)
 s=7
 return A.I(A.hN(h,A.T(["authorization","Bearer "+A.j(k)],b,b)),$async$zb)
 case 7:g=a5

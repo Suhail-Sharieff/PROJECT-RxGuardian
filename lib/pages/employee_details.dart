@@ -66,7 +66,7 @@ class EmployeeDataController extends GetxController {
   Future<List<dynamic>> getEmployeeDetails(
       Map<String, String> queryParams) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/manager/getEmployeeDetails', queryParams);
+    var url = Uri.http(main_uri, '/api/manager/getEmployeeDetails', queryParams);
 
     try {
       var res = await http.get(url, headers: {
@@ -89,7 +89,7 @@ class EmployeeDataController extends GetxController {
   // ADDED: API call to update salary
   Future<void> updateEmployeeSalary(int pharmacistId, num newSalary) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/manager/updateEmployeeSalary');
+    var url = Uri.http(main_uri, '/api/manager/updateEmployeeSalary');
     try {
       var res = await http.patch(
         url,
@@ -112,7 +112,7 @@ class EmployeeDataController extends GetxController {
   // ADDED: API call to remove an employee
   Future<void> removeEmployee(int pharmacistId) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/manager/removeEmployee/$pharmacistId');
+    var url = Uri.http(main_uri, '/api/manager/removeEmployee/$pharmacistId');
     try {
       var res = await http.delete(
         url,

@@ -105,7 +105,7 @@ class ShopPurchaseAnalysisController extends GetxController {
           'searchDrugType': drugTypeSearchController.text,
       };
 
-      var url = Uri.http(main_uri, '/shop/getMyShopAnalysis', queryParams);
+      var url = Uri.http(main_uri, '/api/shop/getMyShopAnalysis', queryParams);
       var res = await http.get(url, headers: {
         'authorization': 'Bearer $accessToken',
       });

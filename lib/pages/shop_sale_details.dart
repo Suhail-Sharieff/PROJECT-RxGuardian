@@ -83,7 +83,7 @@ class SaleDataController extends GetxController {
 
   Future<List<dynamic>> getOverallSales(Map<String, String> queryParams) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/sale/getOverallSales', queryParams);
+    var url = Uri.http(main_uri, '/api/sale/getOverallSales', queryParams);
     try {
       var res = await http.get(
         url,
@@ -103,7 +103,7 @@ class SaleDataController extends GetxController {
 
   Future<List<dynamic>> getDetailsOfSale(int saleId) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/sale/getDetailsOfSale/$saleId');
+    var url = Uri.http(main_uri, '/api/sale/getDetailsOfSale/$saleId');
     try {
       var res = await http.get(
         url,

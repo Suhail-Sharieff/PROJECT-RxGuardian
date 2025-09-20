@@ -167,7 +167,7 @@ class ChatController extends GetxController {
     Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
 
     try {
-      final url = Uri.http(main_uri, '/chat/rooms');
+      final url = Uri.http(main_uri, '/api/chat/rooms');
       final response = await http.post(
         url,
         headers: {
@@ -198,7 +198,7 @@ class ChatController extends GetxController {
   Future<void> fetchRooms() async {
     try {
       isLoadingRooms.value = true;
-      final url = Uri.http(main_uri, '/chat/rooms');
+      final url = Uri.http(main_uri, '/api/chat/rooms');
       final res = await http.get(url, headers: {'Authorization': 'Bearer ${authController.accessToken}'});
 
       if (res.statusCode == 200) {
@@ -312,7 +312,7 @@ class ChatRoomController extends GetxController {
       isLoadingMessages.value = true;
       _chatController.socket.emit('join_room', {'room_id': room.roomId});
 
-      final url = Uri.http(main_uri, '/chat/rooms/${room.roomId}/messages', {'limit': '50'});
+      final url = Uri.http(main_uri, '/api/chat/rooms/${room.roomId}/messages', {'limit': '50'});
       final res = await http.get(url, headers: {'Authorization': 'Bearer ${_authController.accessToken}'});
 
       if (res.statusCode == 200) {
@@ -426,7 +426,7 @@ class ChatRoomController extends GetxController {
   Future<void> fetchRoomMembers() async {
     try {
       isLoadingMembers.value = true;
-      final url = Uri.http(main_uri, '/chat/rooms/${room.roomId}/members');
+      final url = Uri.http(main_uri, '/api/chat/rooms/${room.roomId}/members');
       final response = await http.get(url, headers: {'Authorization': 'Bearer ${_authController.accessToken}'});
 
       if (response.statusCode == 200) {
@@ -444,7 +444,7 @@ class ChatRoomController extends GetxController {
 
   Future<void> addMember(int pharmacistId) async {
     try {
-      final url = Uri.http(main_uri, '/chat/rooms/${room.roomId}/addMemberToRoom');
+      final url = Uri.http(main_uri, '/api/chat/rooms/${room.roomId}/addMemberToRoom');
       final response = await http.post(
         url,
         headers: {
@@ -468,7 +468,7 @@ class ChatRoomController extends GetxController {
 
   Future<void> removeMember(int pharmacistId) async {
     try {
-      final url = Uri.http(main_uri, '/chat/rooms/${room.roomId}/members/$pharmacistId/removeMemberFromRoom');
+      final url = Uri.http(main_uri, '/api/chat/rooms/${room.roomId}/members/$pharmacistId/removeMemberFromRoom');
       final response = await http.delete(url, headers: {'Authorization': 'Bearer ${_authController.accessToken}'});
 
       if (response.statusCode == 200) {
@@ -488,7 +488,7 @@ class ChatRoomController extends GetxController {
     final String action = shouldMute ? 'mute' : 'unmute';
 
     try {
-      final url = Uri.http(main_uri, '/chat/rooms/${room.roomId}/members/${member.pharmacistId}/$action');
+      final url = Uri.http(main_uri, '/api/chat/rooms/${room.roomId}/members/${member.pharmacistId}/$action');
       final response = await http.patch(url, headers: {'Authorization': 'Bearer ${_authController.accessToken}'});
 
       if (response.statusCode == 200) {
@@ -1181,7 +1181,7 @@ class MemberManagementSheet extends StatelessWidget {
     final AuthController authController = Get.find();
     List<Employee> allEmployees = [];
     try {
-      final url = Uri.http(main_uri, '/manager/getEmployeesOfMyShop');
+      final url = Uri.http(main_uri, '/api/manager/getEmployeesOfMyShop');
       final res = await http.get(url, headers: {'Authorization': 'Bearer ${authController.accessToken}'});
       if (res.statusCode == 200) {
         final List<dynamic> data = jsonDecode(res.body)['data'];

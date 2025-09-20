@@ -21,7 +21,7 @@ class AuthController extends GetxController {
   Future<bool> verifyManagerAccess() async {
     // We test access by trying to fetch the first page of a known manager-only route.
     // A success (200) means access is granted. A failure (e.g., 403) means denied.
-    var url = Uri.http(main_uri, '/manager');
+    var url = Uri.http(main_uri, '/api/manager');
     try {
       var res = await http.get(url, headers: {
         'authorization': 'Bearer $accessToken',
@@ -54,7 +54,7 @@ class AuthController extends GetxController {
       );
 
 
-      var url = Uri.http(main_uri, '/auth/register');
+      var url = Uri.http(main_uri, '/api/auth/register');
       var res = await http.post(
         url,
         body: {'name':name,'dob':dob,'address':address,'phone':phone,'password':password,'email':email},
@@ -98,7 +98,7 @@ class AuthController extends GetxController {
 
       // --- STEP 3: Authenticate with your backend ---
       log("Signing in with backend server...");
-      var url = Uri.http(main_uri, '/auth/login');
+      var url = Uri.http(main_uri, '/api/auth/login');
       var res = await http.post(
         url,
         body: {"password": password, "email": email}, // Or send Firebase ID token
@@ -166,7 +166,7 @@ class AuthController extends GetxController {
       log("Found refresh token. Attempting to restore session...");
 
       // --- Call your NEW backend endpoint for refreshing the token ---
-      var url = Uri.http(main_uri, '/auth/refresh-token'); // IMPORTANT: This endpoint must exist!
+      var url = Uri.http(main_uri, '/api/auth/refresh-token'); // IMPORTANT: This endpoint must exist!
       var res = await http.post(
         url,
         headers: {
@@ -212,7 +212,7 @@ class AuthController extends GetxController {
       await instance.signOut();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('refreshToken');
-      var url=Uri.http(main_uri,'/auth/logout');
+      var url=Uri.http(main_uri,'/api/auth/logout');
       // log('logout out using ref token: $my_ref_token');
       var res=await http.post(url,headers:
       {
@@ -241,7 +241,7 @@ class AuthController extends GetxController {
   }
   Future<Map<String,dynamic>> getCurrPharmacistProfile(BuildContext con)async{
     try{
-      var url=Uri.http(main_uri,'/auth/getCurrPharmacistProfile');
+      var url=Uri.http(main_uri,'/api/auth/getCurrPharmacistProfile');
       var res=await http.get(url,headers:
       {
         'authorization': 'Bearer $accessToken'
@@ -255,7 +255,7 @@ class AuthController extends GetxController {
 
   Future<Map<String,dynamic>>getMyShopAnalysis(BuildContext context,int pgNumber)async{
     try{
-      var url=Uri.http(main_uri,'/shop/getMyShopAnalysis',{'pgNo': pgNumber.toString()});
+      var url=Uri.http(main_uri,'/api/shop/getMyShopAnalysis',{'pgNo': pgNumber.toString()});
       var res=await http.get(url,headers:
       {
         'authorization': 'Bearer $accessToken'
@@ -269,7 +269,7 @@ class AuthController extends GetxController {
 
 
   Future<String>shopname()async{
-    var url = Uri.http(main_uri, '/shop/getShopName');
+    var url = Uri.http(main_uri, '/api/shop/getShopName');
     var res = await http.get(
       url,
       headers: {'authorization': 'Bearer $accessToken'},

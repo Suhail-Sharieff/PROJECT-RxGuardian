@@ -186,33 +186,33 @@ class PerformanceDataController extends GetxController {
 
 // Existing methods
 
-  Future<List<dynamic>> getDateVsRevenue(Map<String, String> queryParams) async => await _fetchData('/sale/getDateVsRevenue', queryParams);
+  Future<List<dynamic>> getDateVsRevenue(Map<String, String> queryParams) async => await _fetchData('/api/sale/getDateVsRevenue', queryParams);
 
-  Future<List<dynamic>> getDateVsSale(Map<String, String> queryParams) async => await _fetchData('/sale/getDateVsSale', queryParams);
+  Future<List<dynamic>> getDateVsSale(Map<String, String> queryParams) async => await _fetchData('/api/sale/getDateVsSale', queryParams);
 
 
 
 // --- NEW API Call Methods ---
 
-  Future<List<dynamic>> getTopSellingDrugs(Map<String, String> queryParams) async => await _fetchData('/drug/topSelling', queryParams);
+  Future<List<dynamic>> getTopSellingDrugs(Map<String, String> queryParams) async => await _fetchData('/api/drug/topSelling', queryParams);
 
-  Future<List<dynamic>> getTopRevenueDrugs(Map<String, String> queryParams) async => await _fetchData('/drug/topRevenue', queryParams);
+  Future<List<dynamic>> getTopRevenueDrugs(Map<String, String> queryParams) async => await _fetchData('/api/drug/topRevenue', queryParams);
 
-  Future<Map<String, dynamic>> getAvgBasketSize(Map<String, String> queryParams) async => await _fetchData('/customer/avgBasketSize', queryParams);
+  Future<Map<String, dynamic>> getAvgBasketSize(Map<String, String> queryParams) async => await _fetchData('/api/customer/avgBasketSize', queryParams);
 
-  Future<Map<String, dynamic>> getAvgItemsPerSale(Map<String, String> queryParams) async => await _fetchData('/customer/avgItemsPerSale', queryParams);
+  Future<Map<String, dynamic>> getAvgItemsPerSale(Map<String, String> queryParams) async => await _fetchData('/api/customer/avgItemsPerSale', queryParams);
 
-  Future<Map<String, dynamic>> getNewVsReturning(Map<String, String> queryParams) async => await _fetchData('/customer/newVsReturning', queryParams);
+  Future<Map<String, dynamic>> getNewVsReturning(Map<String, String> queryParams) async => await _fetchData('/api/customer/newVsReturning', queryParams);
 
-  Future<List<dynamic>> getCustomerFrequency(Map<String, String> queryParams) async => await _fetchData('/customer/customerFrequencyDistribution', queryParams);
+  Future<List<dynamic>> getCustomerFrequency(Map<String, String> queryParams) async => await _fetchData('/api/customer/customerFrequencyDistribution', queryParams);
 
-  Future<List<dynamic>> getDiscountUsage(Map<String, String> queryParams) async => await _fetchData('/sale/discountUsage', queryParams);
+  Future<List<dynamic>> getDiscountUsage(Map<String, String> queryParams) async => await _fetchData('/api/sale/discountUsage', queryParams);
 
-  Future<List<dynamic>> getAvgDaysBetweenPurchases(Map<String, String> queryParams) async => await _fetchData('/customer/avgDaysBetweenCustomerPurchase', queryParams);
+  Future<List<dynamic>> getAvgDaysBetweenPurchases(Map<String, String> queryParams) async => await _fetchData('/api/customer/avgDaysBetweenCustomerPurchase', queryParams);
 
 // --- NEW: Method to get shop balance ---
 
-  Future<Map<String, dynamic>> getShopBalance() async => await _fetchData('/shop/getShopBalance', {});
+  Future<Map<String, dynamic>> getShopBalance() async => await _fetchData('/api/shop/getShopBalance', {});
 
 
 

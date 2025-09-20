@@ -93,7 +93,7 @@ class DrugDataController extends GetxController {
         'searchBarcode': searchBarcode,
     };
 
-    var url = Uri.http(main_uri, '/drug/getDrugAndManufacturer', queryParams);
+    var url = Uri.http(main_uri, '/api/drug/getDrugAndManufacturer', queryParams);
 
     try {
       var res = await http.get(
@@ -177,7 +177,7 @@ class DrugAndManufacturerController extends GetxController {
 
   Future<void> buyStock(int drugId, int quantity) async {
     final accessToken = Get.find<AuthController>().accessToken;
-    var url = Uri.http(main_uri, '/drug/addDrugToStock');
+    var url = Uri.http(main_uri, '/api/drug/addDrugToStock');
 
     try {
       var res = await http.put(

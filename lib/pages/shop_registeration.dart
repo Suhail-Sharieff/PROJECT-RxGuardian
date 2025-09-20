@@ -15,7 +15,7 @@ class ShopDataController extends GetxController {
 
   Future<void> registerShop(Map<String, String> shopDetails) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/shop/registerShop');
+    var url = Uri.http(main_uri, '/api/shop/registerShop');
     try {
       // log(url.toString());
 

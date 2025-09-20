@@ -43,7 +43,7 @@ class HiringDataController extends GetxController {
   Future<List<dynamic>> getEmployablePharmacists(
       Map<String, String> queryParams) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/manager/getAllEmployables', queryParams);
+    var url = Uri.http(main_uri, '/api/manager/getAllEmployables', queryParams);
 
     try {
       var res = await http.get(url, headers: {
@@ -66,7 +66,7 @@ class HiringDataController extends GetxController {
   // API call to hire a pharmacist
   Future<void> hirePharmacist(int pharmacistId) async {
     final accessToken = authController.accessToken;
-    var url = Uri.http(main_uri, '/manager/hirePharmacist');
+    var url = Uri.http(main_uri, '/api/manager/hirePharmacist');
     try {
       var res = await http.patch(
         url,
