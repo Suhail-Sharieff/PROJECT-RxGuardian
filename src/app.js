@@ -88,6 +88,9 @@ app.use('/customer',customerRouter)
 import { chatRouter } from "./routes/chat.routes.js"
 app.use('/chat',chatRouter)
 
+import { notificationRouter } from "./routes/notification.routes.js"
+app.use('/notifications',notificationRouter)
+
 import { ApiError } from "./Utils/Api_Error.utils.js"
 app.use((err, req, res, next) => {
     console.log(`ERROR: ${err.message}`);

@@ -322,6 +322,52 @@ INSERT IGNORE INTO chat_rooms (room_id, room_name, room_type, created_by)
 SELECT 1, 'General Chat', 'general', 1
 WHERE NOT EXISTS (SELECT 1 FROM chat_rooms WHERE room_id = 1);
 
+-- ===============================
+-- Notification System Tables
+-- ===============================
+
+-- Notifications Table
+CREATE TABLE IF NOT EXISTS notifications (
+    notification_id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type ENUM('info', 'success', 'warning', 'error') DEFAULT 'info',
+    data JSON NULL,
+    notification_type ENUM('daily', 'weekly', 'monthly', 'custom', 'system') DEFAULT 'custom',
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Notification Reads Table (to track which users have read which notifications)
+CREATE TABLE IF NOT EXISTS notification_reads (
+    read_id INT PRIMARY KEY AUTO_INCREMENT,
+    notification_id INT NOT NULL,
+    pharmacist_id INT NOT NULL,
+    read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_notification_read (notification_id, pharmacist_id),
+    FOREIGN KEY (notification_id) REFERENCES notifications(notification_id) ON DELETE CASCADE,
+    FOREIGN KEY (pharmacist_id) REFERENCES pharmacist(pharmacist_id) ON DELETE CASCADE
+);
+
+-- Notification Preferences Table (for user notification settings)
+CREATE TABLE IF NOT EXISTS notification_preferences (
+    preference_id INT PRIMARY KEY AUTO_INCREMENT,
+    pharmacist_id INT NOT NULL,
+    daily_notifications BOOLEAN DEFAULT TRUE,
+    weekly_notifications BOOLEAN DEFAULT TRUE,
+    monthly_notifications BOOLEAN DEFAULT TRUE,
+    custom_notifications BOOLEAN DEFAULT TRUE,
+    system_notifications BOOLEAN DEFAULT TRUE,
+    email_notifications BOOLEAN DEFAULT FALSE,
+    push_notifications BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_user_preferences (pharmacist_id),
+    FOREIGN KEY (pharmacist_id) REFERENCES pharmacist(pharmacist_id) ON DELETE CASCADE
+);
+
+
 `;
 
 export { init_query };

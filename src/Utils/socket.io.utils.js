@@ -101,6 +101,15 @@ class SocketManager {
         });
     }
 
+    // Broadcast method for notifications
+    broadcast(event, data) {
+        if (this.io) {
+            this.io.emit(event, data);
+        } else {
+            console.warn('Socket.IO not initialized. Cannot broadcast:', event);
+        }
+    }
+
     setupSocketEvents(socket) {
         const { pharmacist_id, name } = socket.pharmacist;
 
@@ -256,6 +265,88 @@ class SocketManager {
         socket.on('update_status', async ({ status, current_room_id }) => {
             await this.updateOnlineStatus(pharmacist_id, socket.id, status, current_room_id);
             this.broadcastUserStatus(pharmacist_id, status);
+        });
+
+        // --- NOTIFICATION EVENTS ---
+        socket.on('mark_notification_read', async (data) => {
+            const { notification_id } = data;
+            
+            // Validate notification_id
+            if (!notification_id) {
+                console.error('❌ No notification_id provided');
+                return socket.emit('error', { message: 'Notification ID is required' });
+            }
+
+            // Convert to integer and validate
+            const notificationIdInt = parseInt(notification_id, 10);
+            if (isNaN(notificationIdInt) || notificationIdInt <= 0) {
+                console.error('❌ Invalid notification_id:', notification_id);
+                return socket.emit('error', { message: 'Invalid notification ID' });
+            }
+
+            // Check if notification exists
+            try {
+                const [notificationRows] = await db.execute(
+                    'SELECT notification_id FROM notifications WHERE notification_id = ?',
+                    [notificationIdInt]
+                );
+
+                if (notificationRows.length === 0) {
+                    console.error('❌ Notification not found:', notificationIdInt);
+                    return socket.emit('error', { message: 'Notification not found' });
+                }
+
+                await db.execute(
+                    `INSERT INTO notification_reads (notification_id, pharmacist_id) 
+                     VALUES (?, ?) 
+                     ON DUPLICATE KEY UPDATE read_at = CURRENT_TIMESTAMP`,
+                    [notificationIdInt, pharmacist_id]
+                );
+
+                console.log(`📧 Notification ${notificationIdInt} marked as read by ${name}`);
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+                socket.emit('error', { message: 'Failed to mark notification as read' });
+            }
+        });
+
+        // Handle notification preferences update
+        socket.on('update_notification_preferences', async (data) => {
+            const { preferences } = data;
+            
+            try {
+                await db.execute(
+                    `INSERT INTO notification_preferences 
+                     (pharmacist_id, daily_notifications, weekly_notifications, monthly_notifications, 
+                      custom_notifications, system_notifications, email_notifications, push_notifications) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
+                     ON DUPLICATE KEY UPDATE 
+                     daily_notifications = VALUES(daily_notifications),
+                     weekly_notifications = VALUES(weekly_notifications),
+                     monthly_notifications = VALUES(monthly_notifications),
+                     custom_notifications = VALUES(custom_notifications),
+                     system_notifications = VALUES(system_notifications),
+                     email_notifications = VALUES(email_notifications),
+                     push_notifications = VALUES(push_notifications),
+                     updated_at = CURRENT_TIMESTAMP`,
+                    [
+                        pharmacist_id,
+                        preferences.daily_notifications ?? true,
+                        preferences.weekly_notifications ?? true,
+                        preferences.monthly_notifications ?? true,
+                        preferences.custom_notifications ?? true,
+                        preferences.system_notifications ?? true,
+                        preferences.email_notifications ?? false,
+                        preferences.push_notifications ?? true
+                    ]
+                );
+
+                socket.emit('notification_preferences_updated', { success: true });
+                console.log(`⚙️ Notification preferences updated for ${name}`);
+            } catch (error) {
+                console.error('Error updating notification preferences:', error);
+                socket.emit('error', { message: 'Failed to update notification preferences' });
+            }
         });
 
         // --- DISCONNECTION ---
