@@ -73,6 +73,8 @@ class EmployeeDataController extends GetxController {
         'authorization': 'Bearer $accessToken',
       });
 
+      // print(jsonDecode(res.body.toString()));
+
       if (res.statusCode == 200) {
         final decodedBody = jsonDecode(res.body);
         return decodedBody['data'];

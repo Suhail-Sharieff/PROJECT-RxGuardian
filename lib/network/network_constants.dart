@@ -1,1 +1,1 @@
-const main_uri = 'http://localhost:8080';
+const main_uri = '172.21.192.1:8080';
