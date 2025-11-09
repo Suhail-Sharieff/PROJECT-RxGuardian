@@ -65,6 +65,7 @@ This repository currently represents the **MVP (Minimum Viable Product)**. Sever
 <p align="center">
 
   <img width="4291" height="1881" alt="er drawio" src="https://github.com/user-attachments/assets/aa551615-2f5d-419f-bf23-5baed46db559" />
+   <img width="2690" height="1744" alt="Screenshot 2025-11-09 213212_imgupscaler ai_Enhancer_2K" src="https://github.com/user-attachments/assets/9edcd0dd-50d1-4f60-8a84-52c785de9ac9" />
 
 </p>
 
@@ -122,6 +123,7 @@ This repository currently represents the **MVP (Minimum Viable Product)**. Sever
 
 ## 👨‍💻 Contributors
 - Built with ❤️ by **Suhail**
+
 
 
 
