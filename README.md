@@ -56,6 +56,7 @@ This repository currently represents the **MVP (Minimum Viable Product)**. Sever
 - Transaction-based query failure management  
 - **70% faster response time** via Redis caching  
 - Secure WebSocket-based chat with Socket.IO  
+- ACID principles achieved via transactions for APIs making multiple queries at once, others are by default implicitly handled by MySQL's InnoDB engine
 
 ---
 
