@@ -498,7 +498,7 @@ class PerformanceUIController extends GetxController {
 
     } catch (err) {
 
-      Get.snackbar('Error', err.toString().replaceAll('Exception: ', ''), backgroundColor: kErrorColor, colorText: Colors.white);
+      Get.snackbar('Error', err.toString(), backgroundColor: kErrorColor, colorText: Colors.white);
 
     } finally {
 
@@ -511,167 +511,111 @@ class PerformanceUIController extends GetxController {
 
 
   void _processChartData(List<dynamic> revenueResult, List<dynamic> salesActivityResult) {
-
-// [This method remains unchanged]
-
     switch (filterType.value) {
-
       case PerformanceFilterType.Day:
-
         final DateTime sel = selectedDate.value;
-
         final DateTime startWindow = DateTime(sel.year, sel.month, sel.day, sel.hour).subtract(const Duration(hours: 5));
-
         final DateTime endWindow = startWindow.add(const Duration(hours: 11));
-
         final Map<DateTime, double> hourlyRevenue = {};
 
         for (int i = 0; i < 12; i++) {
-
           final dt = startWindow.add(Duration(hours: i));
-
           hourlyRevenue[DateTime(dt.year, dt.month, dt.day, dt.hour)] = 0.0;
-
         }
 
         for (var item in revenueResult) {
+          if (item['date'] == null) continue; // Safe check for date
 
           final DateTime dt = DateTime.parse(item['date']).toLocal();
-
           if (!dt.isBefore(startWindow) && !dt.isAfter(endWindow.add(const Duration(hours: 1)))) {
-
             final bucket = DateTime(dt.year, dt.month, dt.day, dt.hour);
-
             if (hourlyRevenue.containsKey(bucket)) {
-
-              hourlyRevenue[bucket] = (hourlyRevenue[bucket] ?? 0) + (item['net_revenue'] as num).toDouble();
-
+              // FIX: Handle null net_revenue safely
+              final revenue = (item['net_revenue'] as num? ?? 0).toDouble();
+              hourlyRevenue[bucket] = (hourlyRevenue[bucket] ?? 0) + revenue;
             }
-
           }
-
         }
-
         final sortedHourlyKeys = hourlyRevenue.keys.toList()..sort();
-
         revenueData.value = sortedHourlyKeys.map((k) => RevenueData(k, hourlyRevenue[k]!)).toList();
 
         final Map<int, SalesActivityData> hourlyData = {};
-
         for (var item in salesActivityResult) {
-
-          final hour = item['sale_hour'] as int;
-
-          final sales = item['nSales'] as int;
-
-          final customers = item['nCustomers'] as int;
+          final hour = item['sale_hour'] as int? ?? 0;
+          final sales = item['nSales'] as int? ?? 0;
+          final customers = item['nCustomers'] as int? ?? 0;
 
           if (hourlyData.containsKey(hour)) {
-
             hourlyData[hour] = SalesActivityData('${hour.toString().padLeft(2, '0')}:00', hourlyData[hour]!.salesCount + sales, hourlyData[hour]!.customerCount + customers);
-
           } else {
-
             hourlyData[hour] = SalesActivityData('${hour.toString().padLeft(2, '0')}:00', sales, customers);
-
           }
-
         }
-
         var sortedHours = hourlyData.keys.toList()..sort();
-
         salesActivityData.value = sortedHours.map((hour) => hourlyData[hour]!).toList();
-
         break;
 
       case PerformanceFilterType.Month:
-
         final Map<int, double> dailyRevenue = {};
-
         for (var item in revenueResult) {
-
+          if (item['date'] == null) continue;
           final day = DateTime.parse(item['date']).day;
 
-          final revenue = (item['net_revenue'] as num).toDouble();
+          // FIX: Handle null net_revenue safely
+          final revenue = (item['net_revenue'] as num? ?? 0).toDouble();
 
           dailyRevenue[day] = (dailyRevenue[day] ?? 0) + revenue;
-
         }
-
         var sortedRevenueDays = dailyRevenue.keys.toList()..sort();
-
         revenueData.value = sortedRevenueDays.map((day) => RevenueData(day.toString(), dailyRevenue[day]!)).toList();
 
         final Map<int, Map<String, int>> dailySales = {};
-
         for (var item in salesActivityResult) {
-
+          if (item['sale_date'] == null) continue;
           final day = DateTime.parse(item['sale_date']).day;
 
           if (!dailySales.containsKey(day)) {
-
             dailySales[day] = {'nSales': 0, 'nCustomers': 0};
-
           }
-
-          dailySales[day]!['nSales'] = dailySales[day]!['nSales']! + (item['nSales'] as int);
-
-          dailySales[day]!['nCustomers'] = dailySales[day]!['nCustomers']! + (item['nCustomers'] as int);
-
+          // FIX: Handle null integers safely
+          dailySales[day]!['nSales'] = dailySales[day]!['nSales']! + (item['nSales'] as int? ?? 0);
+          dailySales[day]!['nCustomers'] = dailySales[day]!['nCustomers']! + (item['nCustomers'] as int? ?? 0);
         }
-
         var sortedSalesDays = dailySales.keys.toList()..sort();
-
         salesActivityData.value = sortedSalesDays.map((day) => SalesActivityData(day.toString(), dailySales[day]!['nSales']!, dailySales[day]!['nCustomers']!)).toList();
-
         break;
 
       case PerformanceFilterType.Year:
-
         final Map<int, double> monthlyRevenue = {};
-
         for (var item in revenueResult) {
-
+          if (item['date'] == null) continue;
           final month = DateTime.parse(item['date']).month;
 
-          final revenue = (item['net_revenue'] as num).toDouble();
+          // FIX: This was the specific line causing your crash
+          final revenue = (item['net_revenue'] as num? ?? 0).toDouble();
 
           monthlyRevenue[month] = (monthlyRevenue[month] ?? 0) + revenue;
-
         }
-
         var sortedRevenueMonths = monthlyRevenue.keys.toList()..sort();
-
         revenueData.value = sortedRevenueMonths.map((month) => RevenueData(DateFormat.MMM().format(DateTime(0, month)), monthlyRevenue[month]!)).toList();
 
         final Map<int, Map<String, int>> monthlySales = {};
-
         for (var item in salesActivityResult) {
-
+          if (item['sale_date'] == null) continue;
           final month = DateTime.parse(item['sale_date']).month;
 
           if (!monthlySales.containsKey(month)) {
-
             monthlySales[month] = {'nSales': 0, 'nCustomers': 0};
-
           }
-
-          monthlySales[month]!['nSales'] = monthlySales[month]!['nSales']! + (item['nSales'] as int);
-
-          monthlySales[month]!['nCustomers'] = monthlySales[month]!['nCustomers']! + (item['nCustomers'] as int);
-
+          // FIX: Handle null integers safely
+          monthlySales[month]!['nSales'] = monthlySales[month]!['nSales']! + (item['nSales'] as int? ?? 0);
+          monthlySales[month]!['nCustomers'] = monthlySales[month]!['nCustomers']! + (item['nCustomers'] as int? ?? 0);
         }
-
         var sortedSalesMonths = monthlySales.keys.toList()..sort();
-
         salesActivityData.value = sortedSalesMonths.map((month) => SalesActivityData(DateFormat.MMM().format(DateTime(0, month)), monthlySales[month]!['nSales']!, monthlySales[month]!['nCustomers']!)).toList();
-
         break;
-
     }
-
   }
-
 
 
   void changeFilterType(PerformanceFilterType newFilter) {

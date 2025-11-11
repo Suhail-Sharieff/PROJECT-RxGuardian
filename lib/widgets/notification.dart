@@ -1,5 +1,7 @@
 // lib/models/notification_model.dart
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:get/get_rx/src/rx_types/rx_types.dart';
 
@@ -53,7 +55,7 @@ class Notification {
       message: json['message'] ?? 'No message body.',
       type: type,
       createdAt: DateTime.parse(json['created_at']),
-      isRead: json['is_read'] ?? false,
+      isRead: json['is_read']==1,
     );
   }
 }
@@ -123,10 +125,11 @@ class NotificationController extends GetxController {
         final List<dynamic> data = jsonDecode(response.body)['data'];
         notifications.value = data.map((json) => Notification.fromJson(json)).toList();
       } else {
-        Get.snackbar('Error', 'Failed to load notifications.');
+        Get.snackbar('Error', 'Failed to load notifications. ');
       }
     } catch (e) {
       Get.snackbar('Error', 'An error occurred: $e');
+      log(e.toString());
     } finally {
       isLoading.value = false;
       update(); // Update unreadCount
