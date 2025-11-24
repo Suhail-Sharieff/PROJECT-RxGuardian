@@ -256,24 +256,72 @@ const getMyShopDrugStock = asyncHandler(
   }
 )
 
-const registerShopAndBecomeManager = asyncHandler(
-  async (req, res) => {
-    try {
-      const { pharmacist_id } = req.pharmacist;
-      const [already_a_manager] = await db.execute('select * from shop where manager_id=?', [pharmacist_id])
-      if (already_a_manager.length !== 0) throw new ApiError(400, `You are already a manager or own another shop!`)
-      const { address, phone, license, name } = req.body;
-      const [license_already_exists] = await db.execute(`select * from shop where license=?`, [license])
-      if (license_already_exists.length !== 0) throw new ApiError(400, "This license alerady exists!");
-      const query = `insert into shop (address,phone,manager_id,license,name) values (?,?,?,?,?)`
+const registerShopAndBecomeManager = asyncHandler(async (req, res) => {
+  const connection = await db.getConnection(); // Get transactional connection
 
-      const [rows] = await db.execute(query, [address, phone, pharmacist_id, license, name])
-      return res.status(200).json(new ApiResponse(200, rows, `Registered new shop id=${rows.insertId}`))
-    } catch (err) {
-      throw new ApiError(400, err.message)
+  try {
+    const { pharmacist_id } = req.pharmacist;
+
+    await connection.beginTransaction(); // START TRANSACTION
+
+    // Check if already a manager
+    const [alreadyManager] = await connection.execute(
+      "SELECT * FROM shop WHERE manager_id = ?",
+      [pharmacist_id]
+    );
+    if (alreadyManager.length !== 0) {
+      throw new ApiError(
+        400,
+        "You are already a manager or own another shop!"
+      );
     }
+
+    // Validate license
+    const { address, phone, license, name } = req.body;
+
+    const [licenseExists] = await connection.execute(
+      "SELECT * FROM shop WHERE license = ?",
+      [license]
+    );
+    if (licenseExists.length !== 0) {
+      throw new ApiError(400, "This license already exists!");
+    }
+
+    // Insert new shop
+    const insertQuery =
+      "INSERT INTO shop (address, phone, manager_id, license, name) VALUES (?,?,?,?,?)";
+
+    const [shopInsertResult] = await connection.execute(insertQuery, [
+      address,
+      phone,
+      pharmacist_id,
+      license,
+      name,
+    ]);
+
+    const shopId = shopInsertResult.insertId;
+
+    // Update employee to become manager of this shop
+    await connection.execute(
+      "UPDATE employee SET shop_id = ? WHERE pharmacist_id = ?",
+      [shopId, pharmacist_id]
+    );
+
+    // Everything OK → COMMIT
+    await connection.commit();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { shop_id: shopId }, `Registered new shop id=${shopId}`));
+  } catch (err) {
+    // ERROR → ROLLBACK
+    if (connection) await connection.rollback();
+    throw new ApiError(400, err.message);
+  } finally {
+    if (connection) connection.release(); // Release connection back to pool
   }
-);
+});
+
 
 
 const getShopBalance = asyncHandler(
