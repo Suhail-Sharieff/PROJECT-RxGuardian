@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:rxGuardian/constants/routes.dart';
 import 'package:rxGuardian/pages/hiring_console.dart';
 

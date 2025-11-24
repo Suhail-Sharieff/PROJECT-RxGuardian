@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:rxGuardian/pages/signup_page.dart';
 import 'package:rxGuardian/pages/verify_email_page.dart';
 import '../constants/RxGuardianLogo.dart';
@@ -70,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
         const SizedBox(height: 20),
         Text(
           'RxGuardian',
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             color: Colors.white,
             fontSize: 28,
             fontWeight: FontWeight.w700,
@@ -80,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           'Sign in to continue your pharmacy management journey.',
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             color: kSecondaryTextColor,
             fontSize: 16,
           ),
@@ -98,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
         TextFormField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: _buildInputDecoration(
             labelText: 'Email',
             prefixIcon: Icons.email_outlined,
@@ -109,7 +108,7 @@ class _LoginPageState extends State<LoginPage> {
         TextFormField(
           controller: _passwordController,
           obscureText: !_passwordVisible,
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: _buildInputDecoration(
             labelText: 'Password',
             prefixIcon: Icons.lock_outline_rounded,
@@ -135,7 +134,7 @@ class _LoginPageState extends State<LoginPage> {
             },
             child: Text(
               'Forgot Password?',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 color: kPrimaryColor,
                 fontWeight: FontWeight.w500,
               ),
@@ -172,7 +171,7 @@ class _LoginPageState extends State<LoginPage> {
           },
           child: Text(
             'Sign In',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
@@ -189,7 +188,7 @@ class _LoginPageState extends State<LoginPage> {
       children: [
         Text(
           "Don't have an account?",
-          style: GoogleFonts.poppins(color: kSecondaryTextColor),
+          style: TextStyle(color: kSecondaryTextColor),
         ),
         TextButton(
           onPressed: () {
@@ -198,7 +197,7 @@ class _LoginPageState extends State<LoginPage> {
           },
           child: Text(
             'Sign Up',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               color: kPrimaryColor,
               fontWeight: FontWeight.w600,
             ),
@@ -216,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     return InputDecoration(
       labelText: labelText,
-      labelStyle: GoogleFonts.poppins(color: kSecondaryTextColor),
+      labelStyle: TextStyle(color: kSecondaryTextColor),
       prefixIcon: Icon(prefixIcon, color: kSecondaryTextColor),
       suffixIcon: suffixIcon,
       filled: true,

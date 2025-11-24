@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:rxGuardian/constants/routes.dart';
 import 'package:rxGuardian/controllers/auth_controller.dart';
 import 'package:rxGuardian/widgets/show_toast.dart';
@@ -102,7 +101,7 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: theme.appBarTheme.backgroundColor ?? theme.cardColor,
-        title: Text('Pharmacist Profile', style: GoogleFonts.poppins()),
+        title: const Text('Pharmacist Profile'),
         centerTitle: true,
         iconTheme: theme.iconTheme,
       ),
@@ -169,7 +168,7 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
         const SizedBox(height: 16),
         Text(
           _profile!.pharmacistName,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: theme.textTheme.titleLarge?.color,
@@ -186,7 +185,7 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
     return Chip(
       label: Text(
         _profile!.role,
-        style: GoogleFonts.poppins(
+        style: TextStyle(
           color: color,
           fontWeight: FontWeight.w600,
         ),
@@ -256,7 +255,7 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 14,
                     color: theme.textTheme.bodySmall?.color,
                   ),
@@ -264,7 +263,7 @@ class _PharmacistProfileScreenState extends State<PharmacistProfileScreen> {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: theme.textTheme.bodyLarge?.color,

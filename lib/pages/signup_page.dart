@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:rxGuardian/pages/verify_email_page.dart';
 
@@ -81,7 +80,7 @@ class _SignupPageState extends State<SignupPage> {
         const SizedBox(height: 20),
         Text(
           'RxGuardian',
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             color: Colors.white,
             fontSize: 28,
             fontWeight: FontWeight.w700,
@@ -91,7 +90,7 @@ class _SignupPageState extends State<SignupPage> {
         Text(
           'Create your account to start managing your pharmacy with ease!',
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             color: kSecondaryTextColor,
             fontSize: 16,
           ),
@@ -109,7 +108,7 @@ class _SignupPageState extends State<SignupPage> {
         TextFormField(
           controller: _nameController,
           keyboardType: TextInputType.name,
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: _buildInputDecoration(
             labelText: 'Full Name',
             prefixIcon: Icons.person_outline,
@@ -121,7 +120,7 @@ class _SignupPageState extends State<SignupPage> {
         TextFormField(
           controller: _dobController,
           readOnly: true, // Prevents keyboard from appearing
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: _buildInputDecoration(
             labelText: 'Date of Birth',
             prefixIcon: Icons.calendar_today_outlined,
@@ -149,7 +148,7 @@ class _SignupPageState extends State<SignupPage> {
         TextFormField(
           controller: _addressController,
           keyboardType: TextInputType.streetAddress,
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: _buildInputDecoration(
             labelText: 'Address',
             prefixIcon: Icons.home_outlined,
@@ -161,7 +160,7 @@ class _SignupPageState extends State<SignupPage> {
         TextFormField(
           controller: _phoneController,
           keyboardType: TextInputType.phone,
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: _buildInputDecoration(
             labelText: 'Phone Number',
             prefixIcon: Icons.phone_outlined,
@@ -173,7 +172,7 @@ class _SignupPageState extends State<SignupPage> {
         TextFormField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: _buildInputDecoration(
             labelText: 'Email',
             prefixIcon: Icons.email_outlined,
@@ -185,7 +184,7 @@ class _SignupPageState extends State<SignupPage> {
         TextFormField(
           controller: _passwordController,
           obscureText: !_passwordVisible,
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: _buildInputDecoration(
             labelText: 'Password',
             prefixIcon: Icons.lock_outline_rounded,
@@ -206,7 +205,7 @@ class _SignupPageState extends State<SignupPage> {
         TextFormField(
           controller: _confirmPasswordController,
           obscureText: !_confirmPasswordVisible,
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: _buildInputDecoration(
             labelText: 'Confirm Password',
             prefixIcon: Icons.lock_outline_rounded,
@@ -257,7 +256,7 @@ class _SignupPageState extends State<SignupPage> {
           },
           child: Text(
             'Create Account',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
@@ -274,7 +273,7 @@ class _SignupPageState extends State<SignupPage> {
       children: [
         Text(
           "Already have an account?",
-          style: GoogleFonts.poppins(color: kSecondaryTextColor),
+          style: TextStyle(color: kSecondaryTextColor),
         ),
         TextButton(
           onPressed: () {
@@ -282,7 +281,7 @@ class _SignupPageState extends State<SignupPage> {
           },
           child: Text(
             'Login',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               color: kPrimaryColor,
               fontWeight: FontWeight.w600,
             ),
@@ -300,7 +299,7 @@ class _SignupPageState extends State<SignupPage> {
   }) {
     return InputDecoration(
       labelText: labelText,
-      labelStyle: GoogleFonts.poppins(color: kSecondaryTextColor),
+      labelStyle: TextStyle(color: kSecondaryTextColor),
       prefixIcon: Icon(prefixIcon, color: kSecondaryTextColor),
       suffixIcon: suffixIcon,
       filled: true,
@@ -320,3 +319,4 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 }
+

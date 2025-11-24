@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:rxGuardian/widgets/notification.dart';
 import 'package:rxGuardian/widgets/pharmacist_profile.dart';
 
@@ -14,9 +13,9 @@ PreferredSizeWidget myAppBar(BuildContext context) {
   final SettingsController sc = Get.find();
   return AppBar(
     elevation: 0,
-    title: Text(
+    title: const Text(
       'RxGuardian',
-      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      style: TextStyle(fontWeight: FontWeight.w600),
     ),
     // The back button is unconventional for a main dashboard.
     // It's better to remove it to prevent confusing navigation loops.

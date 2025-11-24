@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/colors.dart';
-
-
 
 // Enum remains the same
 enum ToastType { SUCCESS, ERROR, WARNING }
@@ -16,25 +13,25 @@ void showToast(BuildContext context, String message, ToastType type) {
 
   // Create the OverlayEntry
   overlayEntry = OverlayEntry(
-    builder: (context) => Positioned(
-      bottom: 50.0,
-      left: 20,
-      right: 20,
-      child: CustomToastWidget(
-        message: message,
-        type: type,
-        // Pass a function to remove the toast
-        onClose: () {
-          overlayEntry.remove();
-        },
-      ),
-    ),
+    builder:
+        (context) => Positioned(
+          bottom: 50.0,
+          left: 20,
+          right: 20,
+          child: CustomToastWidget(
+            message: message,
+            type: type,
+            // Pass a function to remove the toast
+            onClose: () {
+              overlayEntry.remove();
+            },
+          ),
+        ),
   );
 
   // Insert the toast into the overlay
   overlay.insert(overlayEntry);
 }
-
 
 /// The actual UI for the toast notification
 class CustomToastWidget extends StatefulWidget {
@@ -74,8 +71,10 @@ class _CustomToastWidgetState extends State<CustomToastWidget>
       begin: const Offset(0.0, 1.0),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
     // Start the animation
     _controller.forward();
@@ -131,7 +130,7 @@ class _CustomToastWidgetState extends State<CustomToastWidget>
                   color: Colors.black.withOpacity(0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
             ),
             child: Row(
@@ -141,10 +140,7 @@ class _CustomToastWidgetState extends State<CustomToastWidget>
                 Expanded(
                   child: Text(
                     widget.message,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 15,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 15),
                   ),
                 ),
               ],

@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants/colors.dart';
 import '../constants/routes.dart';
 import '../widgets/feature_card.dart';
@@ -56,7 +55,7 @@ class LandingPage extends StatelessWidget {
                   Text(
                     "RxGuardian",
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 52,
                       fontWeight: FontWeight.w700,
@@ -66,7 +65,7 @@ class LandingPage extends StatelessWidget {
                   Text(
                     "Advanced pharmacy management app", // <-- Subtitle updated here
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       color: kSecondaryTextColor,
                       fontSize: 22,
                       height: 1.6,
@@ -91,7 +90,7 @@ class LandingPage extends StatelessWidget {
                     },
                     child: Text(
                       "Get Started Free",
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
@@ -210,7 +209,7 @@ class LandingPage extends StatelessWidget {
     return [
       Text(
         "© 2025 RxGuardian. All rights reserved.", // <-- Footer text updated
-        style: GoogleFonts.poppins(color: kSecondaryTextColor),
+        style: TextStyle(color: kSecondaryTextColor),
       ),
       if (!isWide) const SizedBox(height: 20),
       Wrap(
@@ -250,7 +249,7 @@ class _FooterLinkState extends State<_FooterLink> {
       cursor: SystemMouseCursors.click,
       child: Text(
         widget.text,
-        style: GoogleFonts.poppins(
+        style: TextStyle(
           color: _isHovered ? kPrimaryColor : Colors.white70,
         ),
       ),

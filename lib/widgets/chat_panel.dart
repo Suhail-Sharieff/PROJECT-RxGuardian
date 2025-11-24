@@ -25,6 +25,7 @@ class ChatMessage {
   final RxList<MessageReaction> reactions;
   final String? replyToMessageText;
   final String? replyToSenderName;
+  
   ChatMessage({
     required this.messageId,
     required this.roomId,
@@ -34,11 +35,11 @@ class ChatMessage {
     required this.createdAt,
     this.isOwnMessage = false,
     List<MessageReaction>? initialReactions,
-    this.replyToMessageText, // Add to constructor
-    this.replyToSenderName,  // Add to constructor
+    this.replyToMessageText, 
+    this.replyToSenderName,  
   }) : reactions = (initialReactions ?? []).obs;
+  
   factory ChatMessage.fromJson(Map<String, dynamic> json, int currentUserId) {
-    // Parse the list of reactions from the API response
     var reactionsList = <MessageReaction>[];
     if (json['reactions'] != null) {
       reactionsList = (json['reactions'] as List)
@@ -54,19 +55,20 @@ class ChatMessage {
       messageText: json['message_text'] ?? '',
       createdAt: DateTime.parse(json['created_at']),
       isOwnMessage: json['sender_id'] == currentUserId,
-      initialReactions: reactionsList, // <-- PASS THE PARSED LIST
-      replyToMessageText: json['reply_to_message_text'], // <-- ADD THIS
+      initialReactions: reactionsList, 
+      replyToMessageText: json['reply_to_message_text'], 
       replyToSenderName: json['reply_to_sender_name'],
     );
   }
 }
+
 class ChatRoom {
   final int roomId;
   final String roomName;
   final String? lastMessage;
   final DateTime? lastMessageTime;
   final String? lastMessageSenderName;
-  final int unreadCount; // <-- ADD THIS LINE
+  final int unreadCount; 
 
   ChatRoom({
     required this.roomId,
@@ -74,7 +76,7 @@ class ChatRoom {
     this.lastMessage,
     this.lastMessageTime,
     this.lastMessageSenderName,
-    this.unreadCount = 0, // <-- ADD THIS with a default value
+    this.unreadCount = 0, 
   });
 
   factory ChatRoom.fromJson(Map<String, dynamic> json) {
@@ -86,17 +88,17 @@ class ChatRoom {
           ? DateTime.parse(json['last_message_time'])
           : null,
       lastMessageSenderName: json['last_message_sender_name'],
-      // Parse the new field from the API response
-      unreadCount: json['unread_count'] ?? 0, // <-- ADD THIS LINE
+      unreadCount: json['unread_count'] ?? 0, 
     );
   }
 }
+
 class RoomMember {
   final int pharmacistId;
   final String name;
   final String onlineStatus;
   final bool isAdmin;
-  final RxBool isMuted; // Use RxBool to make it reactive for the UI
+  final RxBool isMuted; 
 
   RoomMember({
     required this.pharmacistId,
@@ -131,13 +133,34 @@ class Employee {
   }
 }
 
+class MessageReaction {
+  final int pharmacistId;
+  final String pharmacistName;
+  final String emoji;
+
+  MessageReaction({
+    required this.pharmacistId,
+    required this.pharmacistName,
+    required this.emoji,
+  });
+
+  factory MessageReaction.fromJson(Map<String, dynamic> json) {
+    return MessageReaction(
+      pharmacistId: json['pharmacist_id'],
+      pharmacistName: json['name'] ?? 'Unknown',
+      emoji: json['emoji'],
+    );
+  }
+}
+
 
 // ======================================================================
 // 2. GETX CONTROLLERS
 // ======================================================================
 
 class ChatController extends GetxController {
-  late IO.Socket socket;
+  // FIX 1: Make socket nullable so it doesn't crash if accessed early
+  IO.Socket? socket;
   final AuthController authController = Get.find();
 
   var rooms = <ChatRoom>[].obs;
@@ -147,20 +170,63 @@ class ChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _connectToSocket();
-    fetchRooms();
+    
+    // FIX 2: Check logic. If we have a token, connect. If not, wait.
+    if (authController.user.value != null && authController.accessToken != null) {
+      _connectToSocket();
+      fetchRooms();
+    }
+
+    // FIX 3: Listen for when the AuthController finishes loading the token
+    ever(authController.user, (user) {
+      if (user != null && authController.accessToken != null) {
+        // User logged in / Session restored -> Connect
+        if (socket == null || socket!.disconnected) {
+          _connectToSocket();
+          fetchRooms();
+        }
+      } else {
+        // User logged out -> Disconnect
+        socket?.dispose();
+        socket = null;
+        rooms.clear();
+      }
+    });
   }
 
   void _connectToSocket() {
     final token = authController.accessToken;
-    socket = IO.io('http://$main_uri', <String, dynamic>{
-      'transports': ['websocket'],
-      'autoConnect': true,
-      'auth': {'token': token},
-    });
+    
+    // Guard: Absolutely do not connect without a token
+    if (token == null || token.isEmpty) {
+      return;
+    }
 
-    socket.onConnect((_) => print('Chat socket connected'));
-    socket.onDisconnect((_) => print('Chat socket disconnected'));
+    // Guard: Don't reconnect if already valid
+    if (socket != null && socket!.connected) return;
+
+    try {
+      // FIX 4: Use OptionBuilder to send token in BOTH Auth and Headers
+      socket = IO.io(
+        'http://$main_uri',
+        IO.OptionBuilder()
+            .setTransports(['websocket'])
+            .disableAutoConnect() // connect manually below
+            .setAuth({'token': token}) // Standard way
+            .setExtraHeaders({'Authorization': 'Bearer $token'}) // Fallback way
+            .build(),
+      );
+
+      socket?.onConnect((_) => print('✅ Chat socket connected'));
+      socket?.onDisconnect((_) => print('🔌 Chat socket disconnected'));
+      socket?.onConnectError((err) => print('❌ Socket connection error: $err'));
+      
+      // Connect manually now that options are configured
+      socket?.connect();
+
+    } catch (e) {
+      print('❌ Error initializing socket: $e');
+    }
   }
 
   Future<void> createRoom(String roomName) async {
@@ -196,6 +262,9 @@ class ChatController extends GetxController {
   }
 
   Future<void> fetchRooms() async {
+    // Check if token exists before trying to fetch
+    if (authController.accessToken == null) return;
+
     try {
       isLoadingRooms.value = true;
       final url = Uri.http(main_uri, '/chat/rooms');
@@ -205,38 +274,32 @@ class ChatController extends GetxController {
         final List<dynamic> data = jsonDecode(res.body)['data'];
         rooms.value = data.map((json) => ChatRoom.fromJson(json)).toList();
       } else {
-        Get.snackbar('Error', 'Failed to load chat rooms.');
+        print('Failed to load chat rooms: ${res.statusCode}');
       }
     } catch (e) {
-      Get.snackbar('Error', 'An error occurred while fetching rooms: $e');
+      print('Error fetching rooms: $e');
     } finally {
       isLoadingRooms.value = false;
     }
   }
 
-  // In ChatController
   void selectRoom(ChatRoom room) {
-    // 1. Tell the server that we are now reading this room
-    socket.emit('mark_room_as_read', {'room_id': room.roomId});
+    // Safe access
+    socket?.emit('mark_room_as_read', {'room_id': room.roomId});
 
-    // 2. Update the UI instantly (Optimistic Update)
-    // Find the room in the list and set its unread count to 0
     final index = rooms.indexWhere((r) => r.roomId == room.roomId);
     if (index != -1 && rooms[index].unreadCount > 0) {
-      // Create a new instance with the updated count
       rooms[index] = ChatRoom(
           roomId: room.roomId,
           roomName: room.roomName,
           lastMessage: room.lastMessage,
           lastMessageTime: room.lastMessageTime,
           lastMessageSenderName: room.lastMessageSenderName,
-          unreadCount: 0 // Set to 0
+          unreadCount: 0 
       );
-      // Notify GetX that the list has changed
       rooms.refresh();
     }
 
-    // 3. Proceed to open the chat room
     selectedRoom.value = room;
     Get.put(ChatRoomController(room: room), tag: room.roomId.toString());
   }
@@ -251,7 +314,7 @@ class ChatController extends GetxController {
 
   @override
   void onClose() {
-    socket.dispose();
+    socket?.dispose();
     super.onClose();
   }
 }
@@ -269,48 +332,51 @@ class ChatRoomController extends GetxController {
   var isLoadingMessages = true.obs;
   var typingUsers = <String>[].obs;
 
-  // State for member management
   var members = <RoomMember>[].obs;
   var isLoadingMembers = true.obs;
 
   final messageTextController = TextEditingController();
   final scrollController = ScrollController();
   Timer? _typingTimer;
+  
   void setReplyingTo(ChatMessage message) {
     replyingToMessage.value = message;
   }
 
-  // NEW: Method to cancel the reply
   void cancelReply() {
     replyingToMessage.value = null;
   }
+  
   @override
   void onInit() {
     super.onInit();
     _joinRoomAndFetchMessages();
-    fetchRoomMembers(); // Fetch members when entering the room
+    fetchRoomMembers(); 
     _setupSocketListeners();
   }
-  // In ChatRoomController
+
   void addReaction(int messageId, String emoji) {
-    _chatController.socket.emit('add_reaction', {
+    // FIX: Safe access ?.
+    _chatController.socket?.emit('add_reaction', {
       'message_id': messageId,
       'emoji': emoji,
       'room_id': room.roomId,
     });
-    // Note: We will handle the UI update in the listener to ensure consistency.
   }
 
   void removeReaction(int messageId) {
-    _chatController.socket.emit('remove_reaction', {
+    // FIX: Safe access ?.
+    _chatController.socket?.emit('remove_reaction', {
       'message_id': messageId,
       'room_id': room.roomId,
     });
   }
+
   Future<void> _joinRoomAndFetchMessages() async {
     try {
       isLoadingMessages.value = true;
-      _chatController.socket.emit('join_room', {'room_id': room.roomId});
+      // FIX: Safe access ?.
+      _chatController.socket?.emit('join_room', {'room_id': room.roomId});
 
       final url = Uri.http(main_uri, '/chat/rooms/${room.roomId}/messages', {'limit': '50'});
       final res = await http.get(url, headers: {'Authorization': 'Bearer ${_authController.accessToken}'});
@@ -330,7 +396,11 @@ class ChatRoomController extends GetxController {
   }
 
   void _setupSocketListeners() {
-    _chatController.socket.on('new_message', (data) {
+    // FIX: Get reference and check null
+    final socket = _chatController.socket;
+    if (socket == null) return;
+
+    socket.on('new_message', (data) {
       final currentUserId = _authController.user.value?.id;
       if (currentUserId == null) return;
 
@@ -341,7 +411,7 @@ class ChatRoomController extends GetxController {
       }
     });
 
-    _chatController.socket.on('user_typing', (data) {
+    socket.on('user_typing', (data) {
       if (data['room_id'] == room.roomId) {
         final name = data['name'];
         if (data['is_typing'] && !typingUsers.contains(name)) {
@@ -352,7 +422,8 @@ class ChatRoomController extends GetxController {
       }
     });
 
-    _chatController.socket.on('error', (data) {
+    socket.on('error', (data) {
+      print("❌ SOCKET ERROR RECEIVED: $data");
       if (data is Map<String, dynamic> && data.containsKey('message')) {
         Get.snackbar(
           "Message Not Sent",
@@ -364,8 +435,7 @@ class ChatRoomController extends GetxController {
       }
     });
 
-    // NEW: Listen for added reactions
-    _chatController.socket.on('reaction_added', (data) {
+    socket.on('reaction_added', (data) {
       final int messageId = data['message_id'];
       final int reactingUserId = data['pharmacist_id'];
       final newReaction = MessageReaction(
@@ -374,50 +444,43 @@ class ChatRoomController extends GetxController {
         emoji: data['emoji'],
       );
 
-      // Find the message in the list
       final message = messages.firstWhereOrNull((m) => m.messageId == messageId);
       if (message != null) {
-        // Remove any previous reaction from this user, then add the new one
         message.reactions.removeWhere((r) => r.pharmacistId == reactingUserId);
         message.reactions.add(newReaction);
       }
     });
 
-    // NEW: Listen for removed reactions
-    _chatController.socket.on('reaction_removed', (data) {
+    socket.on('reaction_removed', (data) {
       final int messageId = data['message_id'];
       final int reactingUserId = data['pharmacist_id'];
 
-      // Find the message in the list
       final message = messages.firstWhereOrNull((m) => m.messageId == messageId);
       if (message != null) {
-        // Remove the reaction from this user
         message.reactions.removeWhere((r) => r.pharmacistId == reactingUserId);
       }
     });
   }
-// In ChatRoomController
+
   void sendMessage() {
     final text = messageTextController.text.trim();
     if (text.isNotEmpty) {
-      // Create the payload
       final payload = {
         'room_id': room.roomId,
         'message_text': text,
         'message_type': 'text',
       };
 
-      // If we are replying, add the ID to the payload
       if (replyingToMessage.value != null) {
         payload['reply_to_message_id'] = replyingToMessage.value!.messageId;
       }
 
-      _chatController.socket.emit('send_message', payload);
+      // FIX: Safe access ?.
+      _chatController.socket?.emit('send_message', payload);
 
       messageTextController.clear();
-      // Important: Cancel the reply mode after sending
       cancelReply();
-      _chatController.socket.emit('stop_typing', {'room_id': room.roomId});
+      _chatController.socket?.emit('stop_typing', {'room_id': room.roomId});
       _typingTimer?.cancel();
       _scrollToBottom();
     }
@@ -504,14 +567,14 @@ class ChatRoomController extends GetxController {
   }
 
   void startTyping() {
-    _chatController.socket.emit('start_typing', {'room_id': room.roomId});
+    _chatController.socket?.emit('start_typing', {'room_id': room.roomId});
     _debounceStopTyping();
   }
 
   void _debounceStopTyping() {
     _typingTimer?.cancel();
     _typingTimer = Timer(const Duration(seconds: 4), () {
-      _chatController.socket.emit('stop_typing', {'room_id': room.roomId});
+      _chatController.socket?.emit('stop_typing', {'room_id': room.roomId});
     });
   }
 
@@ -529,10 +592,12 @@ class ChatRoomController extends GetxController {
 
   @override
   void onClose() {
-    _chatController.socket.emit('leave_room', {'room_id': room.roomId});
-    _chatController.socket.off('new_message');
-    _chatController.socket.off('user_typing');
-    _chatController.socket.off('error');
+    _chatController.socket?.emit('leave_room', {'room_id': room.roomId});
+    _chatController.socket?.off('new_message');
+    _chatController.socket?.off('user_typing');
+    _chatController.socket?.off('error');
+    _chatController.socket?.off('reaction_added');
+    _chatController.socket?.off('reaction_removed');
 
     messageTextController.dispose();
     scrollController.dispose();
@@ -739,7 +804,6 @@ class RoomListView extends StatelessWidget {
             }
             return ListView.builder(
               itemCount: controller.rooms.length,
-              // In RoomListView -> ListView.builder
               itemBuilder: (context, index) {
                 final room = controller.rooms[index];
                 final isSelected = controller.selectedRoom.value?.roomId == room.roomId;
@@ -762,7 +826,6 @@ class RoomListView extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    // --- 👇 UPDATE THE trailing WIDGET LIKE THIS ---
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -773,7 +836,6 @@ class RoomListView extends StatelessWidget {
                             style: TextStyle(fontSize: 12, color: theme.textTheme.bodyMedium?.color),
                           ),
                         const SizedBox(height: 4),
-                        // --- THIS IS THE NEW UNREAD BADGE ---
                         if (room.unreadCount > 0)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -782,9 +844,9 @@ class RoomListView extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Container(
-                              padding: const EdgeInsets.all(4), // space inside circle
+                              padding: const EdgeInsets.all(4), 
                               decoration: const BoxDecoration(
-                                color: Colors.red, // background color of circle
+                                color: Colors.red, 
                                 shape: BoxShape.circle,
                               ),
                               child: Text(
@@ -799,7 +861,6 @@ class RoomListView extends StatelessWidget {
                             ,
                           )
                         else
-                        // Use a placeholder to keep alignment consistent when there's no badge
                           const SizedBox(height: 18),
                       ],
                     ),
@@ -932,22 +993,17 @@ class ChatRoomView extends StatelessWidget {
             ),
           );
         }),
-        // --- END OF REPLY PREVIEW BAR ---
         MessageInput(controller: controller),
       ],
     );
   }
 }
 
-// Assuming your data models (ChatMessage, etc.) and controllers are imported correctly.
-// Also assuming AppColors is defined as in previous examples.
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
   const MessageBubble({super.key, required this.message});
 
-  // Helper method to show the reaction dialog
   void _showReactionDialog(BuildContext context) {
-    // HERE IS THE FIX 👇
     final controller = Get.find<ChatRoomController>(tag: message.roomId.toString());
 
     final List<String> emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
@@ -975,7 +1031,7 @@ class MessageBubble extends StatelessWidget {
             child: const Text('Reply'),
             onPressed: () {
               controller.setReplyingTo(message);
-              Get.back(); // Close the dialog
+              Get.back(); 
             },
           ),
           if (hasUserReacted)
@@ -1237,7 +1293,6 @@ class MemberManagementSheet extends StatelessWidget {
     final AuthController authController = Get.find();
     final int? currentUserId = authController.user.value?.id;
 
-    // ✨ Find out if the current user is an admin in this room.
     final isCurrentUserAdmin = controller.members
         .firstWhere((m) => m.pharmacistId == currentUserId, orElse: () => RoomMember(pharmacistId: 0, name: '', onlineStatus: '', isAdmin: false, isMuted: false))
         .isAdmin;
@@ -1255,7 +1310,6 @@ class MemberManagementSheet extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Obx(() => Text("Members (${controller.members.length})", style: theme.textTheme.titleLarge)),
-                  // ✨ Only show the "Add Member" button if the current user is an admin.
                   if (isCurrentUserAdmin)
                     FilledButton.tonalIcon(
                       onPressed: () => _showAddMemberDialog(context),
@@ -1302,7 +1356,6 @@ class MemberManagementSheet extends StatelessWidget {
                             color: member.onlineStatus == 'online' ? Colors.green.shade600 : Colors.grey,
                           ),
                         ),
-                        // ✨ Only show management buttons if the current user is an admin AND the target is not themselves.
                         trailing: (isCurrentUserAdmin && !isSelf)
                             ? Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1322,7 +1375,7 @@ class MemberManagementSheet extends StatelessWidget {
                             ),
                           ],
                         )
-                            : null, // ✨ No actions for non-admins or for yourself
+                            : null, 
                       ),
                     );
                   },
@@ -1332,25 +1385,6 @@ class MemberManagementSheet extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-}
-class MessageReaction {
-  final int pharmacistId;
-  final String pharmacistName;
-  final String emoji;
-
-  MessageReaction({
-    required this.pharmacistId,
-    required this.pharmacistName,
-    required this.emoji,
-  });
-
-  factory MessageReaction.fromJson(Map<String, dynamic> json) {
-    return MessageReaction(
-      pharmacistId: json['pharmacist_id'],
-      pharmacistName: json['name'] ?? 'Unknown',
-      emoji: json['emoji'],
     );
   }
 }

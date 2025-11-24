@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:rxGuardian/constants/colors.dart';
 import 'package:rxGuardian/constants/routes.dart';
@@ -514,7 +513,7 @@ class _EmployeeCard extends StatelessWidget {
                   children: [
                     Text(
                       employee.pharmacistName,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         color: theme.textTheme.titleMedium?.color,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -522,7 +521,7 @@ class _EmployeeCard extends StatelessWidget {
                     ),
                     Text(
                       'Pharmacist ID: ${employee.pharmacistId}',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         color: theme.textTheme.bodySmall?.color,
                         fontSize: 12,
                       ),
@@ -640,14 +639,14 @@ class _StatItem extends StatelessWidget {
           children: [
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 color: theme.textTheme.bodySmall?.color,
                 fontSize: 12,
               ),
             ),
             Text(
               value,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 color: theme.textTheme.bodyLarge?.color,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,

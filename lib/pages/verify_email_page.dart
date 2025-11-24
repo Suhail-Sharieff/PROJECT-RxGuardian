@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/colors.dart';
 import '../constants/routes.dart';
@@ -29,7 +28,6 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
   Future<void> _handleSendVerification(BuildContext context) async {
     // Your logic to send the verification link
-    await AuthController.sendVerifyLink(context: context);
     showToast(context, 'Email sent! Pls login!', ToastType.SUCCESS);
     // For this UI demo, we'll just toggle the state
     if (_emailController.text.isNotEmpty) {
@@ -90,7 +88,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         TextFormField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: _buildInputDecoration(
             labelText: 'Email Address',
             prefixIcon: Icons.email_outlined,
@@ -111,7 +109,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
           },
           child: Text(
             'Send Verification Link',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
@@ -151,7 +149,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
           },
           child: Text(
             'Back to Login',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
@@ -168,7 +166,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         Text(
           title,
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             color: Colors.white,
             fontSize: 28,
             fontWeight: FontWeight.w700,
@@ -178,7 +176,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         Text(
           subtitle,
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             color: kSecondaryTextColor,
             fontSize: 16,
             height: 1.5,
@@ -195,7 +193,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
   }) {
     return InputDecoration(
       labelText: labelText,
-      labelStyle: GoogleFonts.poppins(color: kSecondaryTextColor),
+      labelStyle: TextStyle(color: kSecondaryTextColor),
       prefixIcon: Icon(prefixIcon, color: kSecondaryTextColor),
       filled: true,
       fillColor: kCardColor,

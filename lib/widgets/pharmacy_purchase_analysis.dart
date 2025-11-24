@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:rxGuardian/constants/colors.dart';
 import 'package:rxGuardian/constants/routes.dart';
@@ -279,7 +278,7 @@ class _ManufacturerStatCard extends StatelessWidget {
                   children: [
                     Text(
                       performance.manufacturerName,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         color: theme.textTheme.titleMedium?.color,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -287,7 +286,7 @@ class _ManufacturerStatCard extends StatelessWidget {
                     ),
                     Text(
                       'Drug Type: ${performance.drugType}',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         color: theme.textTheme.bodyMedium?.color,
                         fontSize: 14,
                       ),
@@ -349,7 +348,7 @@ class _StatItem extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           value,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             color: theme.textTheme.bodyLarge?.color,
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -357,7 +356,7 @@ class _StatItem extends StatelessWidget {
         ),
         Text(
           label,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             color: theme.textTheme.bodySmall?.color,
             fontSize: 12,
           ),

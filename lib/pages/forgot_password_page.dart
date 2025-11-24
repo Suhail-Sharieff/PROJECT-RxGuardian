@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/colors.dart';
 import '../constants/routes.dart';
@@ -72,7 +71,7 @@ class _ForgotPassWordPageState extends State<ForgotPassWordPage> {
         const SizedBox(height: 20),
         Text(
           'Forgot Password?',
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             color: Colors.white,
             fontSize: 28,
             fontWeight: FontWeight.w700,
@@ -82,7 +81,7 @@ class _ForgotPassWordPageState extends State<ForgotPassWordPage> {
         Text(
           "Don't worry! Enter your email below to receive a password reset link.",
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             color: kSecondaryTextColor,
             fontSize: 16,
           ),
@@ -100,7 +99,7 @@ class _ForgotPassWordPageState extends State<ForgotPassWordPage> {
         TextFormField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: _buildInputDecoration(
             labelText: 'Email',
             prefixIcon: Icons.email_outlined,
@@ -119,7 +118,7 @@ class _ForgotPassWordPageState extends State<ForgotPassWordPage> {
           onPressed: _handlePasswordReset,
           child: Text(
             'Send Reset Link',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
@@ -138,7 +137,7 @@ class _ForgotPassWordPageState extends State<ForgotPassWordPage> {
         const SizedBox(height: 20),
         Text(
           'Check Your Email',
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             color: Colors.white,
             fontSize: 22,
             fontWeight: FontWeight.w600,
@@ -148,7 +147,7 @@ class _ForgotPassWordPageState extends State<ForgotPassWordPage> {
         Text(
           'We have sent a password recovery link to your email.',
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(color: kSecondaryTextColor, fontSize: 16),
+          style: TextStyle(color: kSecondaryTextColor, fontSize: 16),
         ),
       ],
     );
@@ -161,7 +160,7 @@ class _ForgotPassWordPageState extends State<ForgotPassWordPage> {
       children: [
         Text(
           "Remember your password?",
-          style: GoogleFonts.poppins(color: kSecondaryTextColor),
+          style: TextStyle(color: kSecondaryTextColor),
         ),
         TextButton(
           onPressed: () {
@@ -169,7 +168,7 @@ class _ForgotPassWordPageState extends State<ForgotPassWordPage> {
           },
           child: Text(
             'Login',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               color: kPrimaryColor,
               fontWeight: FontWeight.w600,
             ),
@@ -186,7 +185,7 @@ class _ForgotPassWordPageState extends State<ForgotPassWordPage> {
   }) {
     return InputDecoration(
       labelText: labelText,
-      labelStyle: GoogleFonts.poppins(color: kSecondaryTextColor),
+      labelStyle: TextStyle(color: kSecondaryTextColor),
       prefixIcon: Icon(prefixIcon, color: kSecondaryTextColor),
       filled: true,
       fillColor: kCardColor,

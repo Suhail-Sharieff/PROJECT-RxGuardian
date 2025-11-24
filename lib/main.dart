@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:rxGuardian/constants/colors.dart';
 import 'package:rxGuardian/controllers/auth_controller.dart';
 import 'constants/routes.dart';
 import 'controllers/auth_wrapper.dart';
 import 'controllers/setting_controller.dart';
-import 'firebase_options.dart';
 
 void main() async {
   try{
     WidgetsFlutterBinding.ensureInitialized();
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     // It's crucial that controllers are put() before the app runs
     Get.put(AuthController());
     Get.put(SettingsController());
@@ -33,10 +29,6 @@ class MyApp extends StatelessWidget {
           () => GetMaterialApp(
         title: 'RxGuardian',
         theme: ThemeData(
-          textTheme: GoogleFonts.poppinsTextTheme().apply( // Using Poppins for a modern look
-            bodyColor: sc.darkMode.value ? kNormalTextColor : Colors.black,
-            displayColor: sc.darkMode.value ? kNormalTextColor : Colors.black,
-          ),
           colorScheme: ColorScheme.fromSeed(
             seedColor: kPrimaryColor, // Use your primary color for a consistent theme
             brightness: sc.darkMode.value ? Brightness.dark : Brightness.light,

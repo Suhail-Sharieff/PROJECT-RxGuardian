@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants/colors.dart';
 
 // A dedicated widget for feature cards that adapts to the current theme
@@ -76,18 +75,13 @@ class _FeatureCardState extends State<FeatureCard> {
               const SizedBox(height: 24), // Using a constant for spacing
               Text(
                 widget.title,
-                style: GoogleFonts.poppins(
-                  // Use the theme's color for the main text.
-                  color: theme.textTheme.titleMedium?.color,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 10),
               Text(
                 widget.description,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   // Use the theme's color for secondary text.
                   color: theme.textTheme.bodyMedium?.color,
                   height: 1.5,

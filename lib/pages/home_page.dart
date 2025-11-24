@@ -1,9 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rxGuardian/controllers/auth_controller.dart';
 import 'package:rxGuardian/pages/advanced_analysis.dart';
-import 'package:rxGuardian/pages/verify_email_page.dart';
 import 'package:rxGuardian/widgets/app_bar.dart';
 import 'package:rxGuardian/widgets/feature_card.dart';
 import 'package:rxGuardian/widgets/show_toast.dart';
@@ -12,9 +10,7 @@ import '../constants/routes.dart';
 // Import pages to navigate to
 
 import '../controllers/setting_controller.dart';
-import '../network/network_constants.dart';
 import '../widgets/chat_panel.dart';
-import 'login_page.dart';
 
 class HomePage extends StatelessWidget {
   static const route_name = home_route; // Your route name
@@ -22,33 +18,8 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use a single StreamBuilder to handle all auth states. This is the recommended approach.
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        // Show a loading indicator while waiting for the auth state
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final user = snapshot.data;
-
-        // If user is not logged in, show the login page
-        if (user == null) {
-          return const LoginPage();
-        }
-
-        // If user is logged in but email is not verified, show the verify email page
-        if (!user.emailVerified) {
-          return const VerifyEmailPage();
-        }
-
-        // If user is logged in and verified, show the main home page content
-        return _HomePageContent();
-      },
-    );
+    // Directly show the home page content
+    return _HomePageContent();
   }
 }
 

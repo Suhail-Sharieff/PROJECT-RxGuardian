@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_rx/src/rx_types/rx_types.dart';
 import 'package:get/get_state_manager/src/simple/get_controllers.dart';
@@ -14,7 +13,6 @@ import '../network/response_handler.dart';
 import '../widgets/show_toast.dart';
 
 class AuthController extends GetxController {
-  static final instance = FirebaseAuth.instance;
 
   final Rx<Pharmacist?> user = Rx<Pharmacist?>(null);
   String? accessToken;
@@ -48,10 +46,7 @@ class AuthController extends GetxController {
         showToast(context, 'Enter proper email/password !', ToastType.WARNING);
         return false;
       }
-    final userCredential=await instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+   
 
 
       var url = Uri.http(main_uri, '/auth/register');
@@ -60,8 +55,6 @@ class AuthController extends GetxController {
         body: {'name':name,'dob':dob,'address':address,'phone':phone,'password':password,'email':email},
         headers: {'authorization': 'Bearer $accessToken'},
       );
-
-      if(!userCredential.user!.emailVerified) return false;
 
 
       return true;
@@ -78,24 +71,7 @@ class AuthController extends GetxController {
   }) async {
     try {
       // --- STEP 1: Authenticate with Firebase ---
-      log("Signing in with Firebase...");
-      final userCredential = await instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      if (userCredential.user == null) {
-        return SignedUpUserStatus.INVALID;
-      }
-
-      // --- STEP 2: Check for email verification ---
-      if (!userCredential.user!.emailVerified) {
-        log("Email not verified for ${userCredential.user!.email}");
-        showToast(context, "Please verify your email before logging in.", ToastType.WARNING);
-        return SignedUpUserStatus.IS_NOT_EMAIL_VERFIED;
-      }
-      log("Firebase sign-in successful and email is verified.");
-
+      
       // --- STEP 3: Authenticate with your backend ---
       log("Signing in with backend server...");
       var url = Uri.http(main_uri, '/auth/login');
@@ -128,29 +104,14 @@ class AuthController extends GetxController {
       log('Backend login successful. User state updated.');
       return SignedUpUserStatus.IS_EMAIL_VERFIED;
 
-    } on FirebaseAuthException catch (e) {
-      log("Firebase sign-in error: ${e.code}");
-      showToast(context, e.message ?? "Invalid credentials.", ToastType.ERROR);
-      return SignedUpUserStatus.INVALID;
-    } on Exception catch(e) {
+    }  on Exception catch(e) {
       log("A general exception occurred during sign-in: $e");
       showToast(context, "An error occurred. Please try again.", ToastType.ERROR);
       return SignedUpUserStatus.INVALID;
     }
   }
 
-  static Future<void> sendVerifyLink({required BuildContext context}) async {
-    try {
-      await instance.currentUser?.sendEmailVerification();
-    } catch (e) {
-      showToast(
-        context,
-        "Some error occurred in sending mail!",
-        ToastType.ERROR,
-      );
-    }
-  }
-
+ 
   //------------to maintain conn with server even on refresh -----VVVIMP
   Future<bool> tryToRestoreSession(BuildContext context) async {
     try {
@@ -209,7 +170,6 @@ class AuthController extends GetxController {
 
   Future<void> logout({required BuildContext context}) async {
     try {
-      await instance.signOut();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('refreshToken');
       var url=Uri.http(main_uri,'/auth/logout');
@@ -234,7 +194,7 @@ class AuthController extends GetxController {
   }
   Future<void> updatePassword({required BuildContext context,required String oldPassword,required String newPassword})async{
     try{
-      await instance.sendPasswordResetEmail(email: user.value!.email!);
+      // await instance.sendPasswordResetEmail(email: user.value!.email!);
     }catch(e){
       showToast(context, "Failed to update password", ToastType.ERROR);
     }
