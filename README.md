@@ -5,4 +5,8 @@ RxGuardian Frontend
 - run `flutter build web`
 - transfer `dist` into main dir and rename folder to `docs`
 - host frontend on github pages
-
+- docker setup to genrate frontend_only image
+```
+cd build/web
+docker build -t suhailsharieff/rxfrontend:latest .
+```
