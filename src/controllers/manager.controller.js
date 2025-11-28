@@ -11,6 +11,8 @@ const getEmployeeDetails=asyncHandler(
         try{
             const pharmacist_id=req.pharmacist.pharmacist_id;
             const shop_id=req.shop_id;
+            // console.log(`shop_id=${shop_id}`);
+            
             const { limit, offset, whereClause, params } = buildPaginatedFilters({
                         req,
                         baseParams: [shop_id,shop_id],

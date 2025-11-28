@@ -95,7 +95,8 @@ const getPharmacistById = async (pharmacist_id) => {
 
 
 const loginPharmacist = asyncHandler(async (req, res) => {
-    console.log("Fetching UI data for login...");
+    try{
+      console.log("Fetching UI data for login...");
     // console.log(`Body received for login: ${JSON.stringify(req.body)}`);
 
     const { email, password } = req.body;
@@ -154,6 +155,9 @@ const loginPharmacist = asyncHandler(async (req, res) => {
                 "Login session created!"
             )
         );
+    }catch(err){
+      throw new ApiError(400,err.message);
+    }
 });
 
 

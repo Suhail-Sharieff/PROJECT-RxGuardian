@@ -111,7 +111,7 @@ const getChatRooms = asyncHandler(async (req, res) => {
             (SELECT COUNT(*) 
              FROM chat_messages cm 
              WHERE cm.room_id = cr.room_id 
-               AND (cm.created_at > crm.last_read_timestamp OR crm.last_read_timestamp IS NULL)
+               AND (cm.created_at > crm.last_read_at OR crm.last_read_at IS NULL)
                AND cm.sender_id != ? -- Don't count your own messages as unread
             ) as unread_count
 
