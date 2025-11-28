@@ -15,6 +15,7 @@ services:
 
   rx_guardian_node_service:
     build: .
+    image: backend_only
     container_name: rx_node
     restart: always
     ports:
