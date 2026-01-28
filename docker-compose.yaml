@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   rx_guardian_redis_service:
     image: redis/redis-stack:latest
