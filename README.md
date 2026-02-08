@@ -15,54 +15,54 @@ This repository currently represents the **MVP (Minimum Viable Product)**. Sever
 
 ---
 
-## ✨ Core Features
+##  Core Features
 
-1. 🔐 **Authentication & Security**  
+1. **Authentication & Security**  
    - Hybrid Firebase + JWT flow for multi-layered security  
    - Session handling with refresh tokens  
 
-2. 📦 **Inventory & Stock Management**  
+2. **Inventory & Stock Management**  
    - Real-time stock visibility  
    - Low-stock and expiry alerts  
 
-3. 🧾 **Point of Sale (POS) Console**  
+3. **Point of Sale (POS) Console**  
    - Fast, dedicated billing interface  
    - Integrated **customer management module**  
 
-4. 📊 **Business Analytics**  
+4. **Business Analytics**  
    - Daily, monthly, and yearly reports  
    - Sales trends, stock consumption, and drug performance  
 
-5. 🛒 **Procurement Panel**  
+5. **Procurement Panel**  
    - Direct purchase of medicines from manufacturers  
    - Streamlined vendor integration  
 
-6. 🧑‍💼 **Manager Console**  
+6. **Manager Console**  
    - Track employee performance and sales contribution  
    - Remote pharmacist hiring & role-based access  
 
-7. 💬 **Integrated Chat System**  
+7. **Integrated Chat System**  
    - Role-based rooms (e.g., divisions/teams)  
    - Message editing, reactions, and threaded replies  
 
-8. 🤖 **AI-Driven Insights (Planned)**  
+8. **AI-Driven Insights (Planned)**  
    - Predictive analytics for billing, procurement, and hiring  
    - Demand forecasting with anomaly detection  
 
 ---
 
-## ⚡ Optimizations
+## Optimizations
 - Optimized SQL queries for performance  
 - Transaction-based query failure management  
-- **70% faster response time** via Redis caching  
+- **70% faster response time** via Redis caching using **Cache Aside Pattern** where app manages cache explicitly
 - Secure WebSocket-based chat with Socket.IO  
 - ACID principles achieved via transactions for APIs making multiple queries at once, others are by default implicitly handled by MySQL's InnoDB engine
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
-### 🖼️ System Overview
+### System Overview
 <p align="center">
 
   <img width="4291" height="1881" alt="er drawio" src="https://github.com/user-attachments/assets/aa551615-2f5d-419f-bf23-5baed46db559" />
@@ -72,7 +72,7 @@ This repository currently represents the **MVP (Minimum Viable Product)**. Sever
 
 ---
 
-### 🖥️ Application Screens
+### Application Screens
 <p align="center">
   <img src="https://github.com/user-attachments/assets/a4fdb8b5-187f-47c4-969c-485b9706208a" width="32%" />
   <img src="https://github.com/user-attachments/assets/5a952278-1dfd-4dce-ba40-a1dfcded567a" width="32%" />
@@ -105,25 +105,17 @@ This repository currently represents the **MVP (Minimum Viable Product)**. Sever
 
 ---
 
-## 🚀 Future Roadmap
+## Future Roadmap
 - AI-powered demand forecasting  
 - Multi-store integration  
 - Mobile-friendly dashboards  
 - Real-time notifications for stock-outs  
 - Integration with medical insurance providers  
 
----
-## Testing locally
-- Create a new connection with port `3306` in work bench and on root terminal run  `nodemon index.js`, also set `env` file accordingly
-## Testing with Docker
-- If first time,Create a new connection in workbench with port `9696` and password `RxGuardian@123`(u can change in compose file) in workbench and run  `docker-compose up --build`, if not fist time ie the container is already created, run `docker-compose up` will be enough
-- Suppose you made some change in code, then since the volume of code is also defined in copose file it will be synced, you just have  to restart server using `docker restart rx_node`, rx_node is the container name i have given  for node.
-- Suppose u want to enter bash/shell of `rx_node`(lets say), run `docker exec -it rx_node sh` and for sql run `docker exec -it rx_sql mysql -u root -p`
-- Suppose u want to install some node_package too, restarting server wont work coz since they are large they arent synced in volume, run command `docker exec -it rx_node npm install <package_name>
-`
 
-## 👨‍💻 Contributors
+## Contributors
 - Built with ❤️ by **Suhail**
+
 
 
 
