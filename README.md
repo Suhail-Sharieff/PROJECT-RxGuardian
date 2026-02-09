@@ -52,7 +52,7 @@ This repository currently represents the **MVP (Minimum Viable Product)**. Sever
 ---
 
 ## Optimizations
-- Optimized SQL queries for performance  
+- Optimized SQL queries for performance and `query coalescing` for repeated and complex DB updates (like in Billing POS) 
 - Transaction-based query failure management  
 - **70% faster response time** via Redis caching using **Cache Aside Pattern** where app manages cache explicitly
 - Secure WebSocket-based chat with Socket.IO  
@@ -115,6 +115,7 @@ This repository currently represents the **MVP (Minimum Viable Product)**. Sever
 
 ## Contributors
 - Built with ❤️ by **Suhail**
+
 
 
 
