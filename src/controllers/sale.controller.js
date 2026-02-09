@@ -8,85 +8,129 @@ import { buildPaginatedFilters } from "../Utils/paginated_query_builder.js";
 import { redis } from "../Utils/redis.connection.js";
 
 const initSale = asyncHandler(async (req, res) => {
- const { pharmacist_id } = req.pharmacist;
- const shop_id = await getShopImWorkingIn(req, res);
+  const { pharmacist_id } = req.pharmacist;
+  const shop_id = await getShopImWorkingIn(req, res);
 
 
- const { items, discount = 0,customer_id } = req.body;
+  const { items, discount = 0, customer_id } = req.body;
+
+  // console.log(JSON.stringify(req.body,null,2));
+  /**{
+  "items": [
+    {
+      "drug_id": 2,
+      "quantity": 32
+    },
+    {
+      "drug_id": 1,
+      "quantity": 21
+    }
+  ],
+  "discount": 0,
+  "customer_id": 5
+} */
 
 
- if (!Array.isArray(items) || items.length === 0) {
-  throw new ApiError(400, "Provide items array with { drug_id, quantity }");
- }
-
-
- if(!customer_id) throw new ApiError(400,"Please provide customer id")
-
-
-
- for (const it of items) {
-  if (
-   !it ||
-   typeof it.drug_id !== "number" ||
- typeof it.quantity !== "number" ||
-   it.quantity <= 0
- ) {
-   throw new ApiError(
-    400,
-   "Each item must include numeric drug_id and positive quantity"
-   );
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new ApiError(400, "Provide items array with { drug_id, quantity }");
   }
- }
 
 
- try {
+  if (!customer_id) throw new ApiError(400, "Please provide customer id")
 
-
-  const [saleResult] = await db.execute(
-   "INSERT INTO sale (shop_id, pharmacist_id, discount,customer_id) VALUES (?, ?, ?,?)",
-   [shop_id, pharmacist_id, discount,customer_id]
-  );
-  const sale_id = saleResult.insertId;
-  if (!sale_id) throw new ApiError(500, "Failed to create sale");
-
-
-  const placeholders = items.map(() => "(?,?,?)").join(",");
-  const values = items.flatMap((it) => [sale_id, it.drug_id, it.quantity]);
-  const insertQuery = `INSERT INTO sale_item (sale_id, drug_id, quantity) VALUES ${placeholders}`;
-
-
-  // console.log(`place holder to insert are: ${placeholders}`);
-
-
-  const [itemsResult] = await db.execute(insertQuery, values);
 
 
   for (const it of items) {
-   const [upd] = await db.execute(
-    "UPDATE quantity SET quantity = quantity - ? WHERE drug_id = ? AND shop_id = ? AND quantity >= ?",
-    [it.quantity, it.drug_id, shop_id, it.quantity]
-   );
-   if (upd.affectedRows === 0) {
-    throw new ApiError(
-     400,
-     `Insufficient stock in shop ${shop_id} for drug_id ${it.drug_id}`
-    );
-   }
+    if (
+      !it ||
+      typeof it.drug_id !== "number" ||
+      typeof it.quantity !== "number" ||
+      it.quantity <= 0
+    ) {
+      throw new ApiError(
+        400,
+        "Each item must include numeric drug_id and positive quantity"
+      );
+    }
   }
 
+  let conn;
 
+  try {
+    conn = await db.getConnection();
+    await conn.beginTransaction();
 
-  return res.status(200).json(
-   new ApiResponse(
-    200,
-    { sale_id, itemsInserted: itemsResult.affectedRows },
-    "Sale created successfully"
-   )
-  );
- } catch (err) {
-  if (err instanceof ApiError) throw err;
-  throw new ApiError(500, err.message || "Database error during sale creation");
- }
+    const [saleResult] = await conn.execute(
+      `INSERT INTO sale (shop_id, pharmacist_id, discount, customer_id)
+     VALUES (?, ?, ?, ?)`,
+      [shop_id, pharmacist_id, discount, customer_id]
+    );
+
+    const sale_id = saleResult.insertId;
+    if (!sale_id) throw new ApiError(500, "Failed to create sale");
+
+    const placeholders = items.map(() => "(?,?,?)").join(",");
+    const values = items.flatMap(it => [sale_id, it.drug_id, it.quantity]);
+
+    await conn.execute(
+      `INSERT INTO sale_item (sale_id, drug_id, quantity)
+     VALUES ${placeholders}`,
+      values
+    );
+    await conn.execute(`DROP TEMPORARY TABLE IF EXISTS temp_stock`);
+    await conn.execute(`
+    CREATE TEMPORARY TABLE temp_stock (
+      drug_id INT NOT NULL,
+      quantity INT NOT NULL,
+      PRIMARY KEY (drug_id)
+    ) ENGINE=MEMORY
+  `);
+
+    const tempPlaceholders = items.map(() => "(?, ?)").join(",");
+    const tempValues = items.flatMap(it => [it.drug_id, it.quantity]);
+
+    await conn.execute(
+      `INSERT INTO temp_stock (drug_id, quantity)
+     VALUES ${tempPlaceholders}
+     ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)`,
+      tempValues
+    );
+
+    const [upd] = await conn.execute(
+      `
+    UPDATE quantity q
+    JOIN temp_stock t ON q.drug_id = t.drug_id
+    SET q.quantity = q.quantity - t.quantity
+    WHERE q.shop_id = ?
+      AND q.quantity >= t.quantity
+    `,
+      [shop_id]
+    );
+
+    const [[{ cnt }]] = await conn.execute(
+      `SELECT COUNT(*) AS cnt FROM temp_stock`
+    );
+
+    if (upd.affectedRows !== cnt) {
+      throw new ApiError(400, "Insufficient stock for one or more drugs");
+    }
+
+    await conn.commit();
+
+    
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        "Sale created successfully"
+      )
+    );
+  } catch (err) {
+    if (conn) await conn.rollback();
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(500, err.message || "Database error during sale creation");
+  } finally {
+    if (conn) conn.release()
+  }
 });
 
 
