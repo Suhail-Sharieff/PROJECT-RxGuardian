@@ -103205,7 +103205,7 @@ $S:619}
 A.D6.prototype={
 IJ(){var s=0,r=A.M(t.y),q,p=2,o=[],n=this,m,l,k,j,i,h
 var $async$IJ=A.I(function(a,b){if(a===1){o.push(b)
-s=p}for(;;)switch(s){case 0:i=A.de("http","localhost:8080","/manager",null)
+s=p}for(;;)switch(s){case 0:i=A.de("http","172.26.224.1:8080","/manager",null)
 p=4
 k=t.N
 s=7
@@ -103239,7 +103239,7 @@ s=p}for(;;)switch(s){case 0:p=4
 if(d.length===0||f.length===0){A.j0(b,"Enter proper email/password !",B.pR)
 q=!1
 s=1
-break}m=A.de("http","localhost:8080","/auth/register",null)
+break}m=A.de("http","172.26.224.1:8080","/auth/register",null)
 k=t.N
 s=7
 return A.O(A.wy(m,A.U(["name",e,"dob",c,"address",a,"phone",g,"password",f,"email",d],k,k),A.U(["authorization","Bearer "+A.k(n.ay)],k,k)),$async$Cl)
@@ -103268,7 +103268,7 @@ acV(a,a0,a1){var s=0,r=A.M(t.En),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d,c,b
 var $async$tq=A.I(function(a2,a3){if(a2===1){o.push(a3)
 s=p}for(;;)switch(s){case 0:p=4
 A.il("Signing in with backend server...","")
-m=A.de("http","localhost:8080","/auth/login",null)
+m=A.de("http","172.26.224.1:8080","/auth/login",null)
 d=t.N
 s=7
 return A.O(A.wy(m,A.U(["password",a1,"email",a0],d,d),null).Ij(B.tl),$async$tq)
@@ -103328,7 +103328,7 @@ if(l==null||l.length===0){A.il("No refresh token found. User is not logged in.",
 q=!1
 s=1
 break}A.il("Found refresh token. Attempting to restore session...","")
-k=A.de("http","localhost:8080","/auth/refresh-token",null)
+k=A.de("http","172.26.224.1:8080","/auth/refresh-token",null)
 d=t.N
 s=8
 return A.O(A.wy(k,null,A.U(["Content-Type","application/json","Authorization","Bearer "+l],d,d)).Ij(B.tl),$async$wb)
@@ -103383,7 +103383,7 @@ case 6:n=c
 n.a.H(0,"refreshToken")
 s=7
 return A.O($.aQL().H(0,"flutter.refreshToken"),$async$rM)
-case 7:m=A.de("http","localhost:8080","/auth/logout",null)
+case 7:m=A.de("http","172.26.224.1:8080","/auth/logout",null)
 k=t.N
 s=8
 return A.O(A.wy(m,null,A.U(["authorization","Bearer "+A.k(o.ay)],k,k)),$async$rM)
@@ -103409,7 +103409,7 @@ BC(a){return this.abb(a)},
 abb(a){var s=0,r=A.M(t.P),q,p=2,o=[],n=this,m,l,k,j,i,h
 var $async$BC=A.I(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:p=4
-m=A.de("http","localhost:8080","/auth/getCurrPharmacistProfile",null)
+m=A.de("http","172.26.224.1:8080","/auth/getCurrPharmacistProfile",null)
 j=t.N
 s=7
 return A.O(A.hq(m,A.U(["authorization","Bearer "+A.k(n.ay)],j,j)),$async$BC)
@@ -103440,7 +103440,7 @@ Ci(){var s=0,r=A.M(t.N),q,p=this,o,n
 var $async$Ci=A.I(function(a,b){if(a===1)return A.J(b,r)
 for(;;)switch(s){case 0:o=t.N
 s=3
-return A.O(A.hq(A.de("http","localhost:8080","/shop/getShopName",null),A.U(["authorization","Bearer "+A.k(p.ay)],o,o)),$async$Ci)
+return A.O(A.hq(A.de("http","172.26.224.1:8080","/shop/getShopName",null),A.U(["authorization","Bearer "+A.k(p.ay)],o,o)),$async$Ci)
 case 3:n=b
 q=J.ay(B.O.dm(A.d0(A.d_(n.e)).c9(n.w),null),"data")
 s=1
@@ -103529,7 +103529,7 @@ je(a,b){return this.aph(a,b)},
 aph(a,b){var s=0,r=A.M(t.z),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$je=A.I(function(c,d){if(c===1){o.push(d)
 s=p}for(;;)switch(s){case 0:i=n.ax.ay
-h=A.de("http","localhost:8080",a,b)
+h=A.de("http","172.26.224.1:8080",a,b)
 p=4
 k=t.N
 s=7
@@ -104197,7 +104197,7 @@ C1(a){return this.ac4(a)},
 ac4(a){var s=0,r=A.M(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$C1=A.I(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:i=n.ax.ay
-h=A.de("http","localhost:8080","/shop/getMyShopDrugStock",a)
+h=A.de("http","172.26.224.1:8080","/shop/getMyShopDrugStock",a)
 p=4
 k=t.N
 s=7
@@ -104227,7 +104227,7 @@ GN(a,b,c){return this.aKI(a,b,c)},
 aKI(a,b,c){var s=0,r=A.M(t.P),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$GN=A.I(function(d,a0){if(d===1){o.push(a0)
 s=p}for(;;)switch(s){case 0:g=n.ax.ay
-f=A.de("http","localhost:8080","/sale/initSale",null)
+f=A.de("http","172.26.224.1:8080","/sale/initSale",null)
 p=4
 j=t.N
 i=A.U(["authorization","Bearer "+A.k(g),"Content-Type","application/json"],j,j)
@@ -104262,7 +104262,7 @@ abc(a){var s=0,r=A.M(t._l),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f
 var $async$BD=A.I(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:i=n.ax.ay
 h=t.N
-g=A.de("http","localhost:8080","/customer/getCutomerByPhone",A.U(["searchByPhone",a],h,t.z))
+g=A.de("http","172.26.224.1:8080","/customer/getCutomerByPhone",A.U(["searchByPhone",a],h,t.z))
 p=4
 s=7
 return A.O(A.hq(g,A.U(["authorization","Bearer "+A.k(i)],h,h)),$async$BD)
@@ -104293,7 +104293,7 @@ Fp(a,b){return this.aH6(a,b)},
 aH6(a,b){var s=0,r=A.M(t.Ea),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d
 var $async$Fp=A.I(function(c,a0){if(c===1){o.push(a0)
 s=p}for(;;)switch(s){case 0:f=n.ax.ay
-e=A.de("http","localhost:8080","/customer/createCustomer",null)
+e=A.de("http","172.26.224.1:8080","/customer/createCustomer",null)
 p=4
 i=t.N
 h=A.U(["authorization","Bearer "+A.k(f),"Content-Type","application/json"],i,i)
@@ -104467,7 +104467,7 @@ a0=t.N
 n.k1.sl(A.U(["sale_id",J.ay(l,"sale_id"),"shop_name",j,"customer_name",a2.gl().b,"items",A.jm(c,!0,t.yQ),"subtotal",n.gql(),"item_discounts",n.gpZ(),"gst_rate",n.go.gl(),"gst_amount",n.gJ7(),"final_discount",n.gGf(),"grand_total",n.gJ6(),"date",new A.b2(Date.now(),0,!1)],a0,t.z))
 c=$.an
 i=(c==null?$.an=B.G:c).cb(null,b).ay
-h=A.de("http","localhost:8080","/shop/addBalance",null)
+h=A.de("http","172.26.224.1:8080","/shop/addBalance",null)
 a2=A.U(["authorization","Bearer "+A.k(i),"Content-Type","application/json"],a0,a0)
 s=9
 return A.O(A.aQ8(h,B.O.ly(A.U(["money",n.gJ6()],a0,t.i),null),a2),$async$vd)
@@ -104896,7 +104896,7 @@ if(c.length!==0)e.n(0,"searchDrug",c)
 if(a1.length!==0)e.n(0,"searchManufacturer",a1)
 if(a0.length!==0)e.n(0,"searchDrugType",a0)
 if(b.length!==0)e.n(0,"searchBarcode",b)
-m=A.de("http","localhost:8080","/drug/getDrugAndManufacturer",e)
+m=A.de("http","172.26.224.1:8080","/drug/getDrugAndManufacturer",e)
 p=4
 s=7
 return A.O(A.hq(m,A.U(["authorization","Bearer "+A.k(g)],f,f)),$async$zo)
@@ -104970,7 +104970,7 @@ s=p}for(;;)switch(s){case 0:$.a6()
 e=$.an
 if(e==null)e=$.an=B.G
 m=e.cb(null,t.F).ay
-l=A.de("http","localhost:8080","/drug/addDrugToStock",null)
+l=A.de("http","172.26.224.1:8080","/drug/addDrugToStock",null)
 p=4
 e=t.N
 d=A.U(["authorization","Bearer "+A.k(m),"Content-Type","application/json"],e,e)
@@ -105209,7 +105209,7 @@ BQ(a){return this.abB(a)},
 abB(a){var s=0,r=A.M(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$BQ=A.I(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:g=n.ax.ay
-f=A.de("http","localhost:8080","/shop/getMyShopDrugStock",a)
+f=A.de("http","172.26.224.1:8080","/shop/getMyShopDrugStock",a)
 p=4
 i=t.N
 s=7
@@ -105419,7 +105419,7 @@ BL(a){return this.abk(a)},
 abk(a){var s=0,r=A.M(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$BL=A.I(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:g=n.ax.ay
-f=A.de("http","localhost:8080","/manager/getEmployeeDetails",a)
+f=A.de("http","172.26.224.1:8080","/manager/getEmployeeDetails",a)
 p=4
 i=t.N
 s=7
@@ -105453,7 +105453,7 @@ IE(a,b){return this.aPt(a,b)},
 aPt(a,b){var s=0,r=A.M(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g,f
 var $async$IE=A.I(function(c,d){if(c===1){p.push(d)
 s=q}for(;;)switch(s){case 0:h=o.ax.ay
-g=A.de("http","localhost:8080","/manager/updateEmployeeSalary",null)
+g=A.de("http","172.26.224.1:8080","/manager/updateEmployeeSalary",null)
 q=3
 k=t.N
 j=A.U(["authorization","Bearer "+A.k(h),"Content-Type","application/json"],k,k)
@@ -105483,7 +105483,7 @@ I7(a){return this.aOe(a)},
 aOe(a){var s=0,r=A.M(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g
 var $async$I7=A.I(function(b,c){if(b===1){p.push(c)
 s=q}for(;;)switch(s){case 0:i=o.ax.ay
-h=A.de("http","localhost:8080","/manager/removeEmployee/"+a,null)
+h=A.de("http","172.26.224.1:8080","/manager/removeEmployee/"+a,null)
 q=3
 k=t.N
 s=6
@@ -105858,7 +105858,7 @@ BK(a){return this.abj(a)},
 abj(a){var s=0,r=A.M(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$BK=A.I(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:g=n.ax.ay
-f=A.de("http","localhost:8080","/manager/getAllEmployables",a)
+f=A.de("http","172.26.224.1:8080","/manager/getAllEmployables",a)
 p=4
 i=t.N
 s=7
@@ -105892,7 +105892,7 @@ GI(a){return this.aKn(a)},
 aKn(a){var s=0,r=A.M(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g,f
 var $async$GI=A.I(function(b,c){if(b===1){p.push(c)
 s=q}for(;;)switch(s){case 0:h=o.ax.ay
-g=A.de("http","localhost:8080","/manager/hirePharmacist",null)
+g=A.de("http","172.26.224.1:8080","/manager/hirePharmacist",null)
 q=3
 k=t.N
 j=A.U(["authorization","Bearer "+A.k(h),"Content-Type","application/json"],k,k)
@@ -106330,7 +106330,7 @@ I4(a){return this.aO3(a)},
 aO3(a){var s=0,r=A.M(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g
 var $async$I4=A.I(function(b,c){if(b===1){p.push(c)
 s=q}for(;;)switch(s){case 0:i=o.ax.ay
-h=A.de("http","localhost:8080","/shop/registerShop",null)
+h=A.de("http","172.26.224.1:8080","/shop/registerShop",null)
 q=3
 k=t.N
 k=A.U(["authorization","Bearer "+A.k(i),"Content-Type","application/json"],k,k)
@@ -106448,7 +106448,7 @@ BO(a){return this.abx(a)},
 abx(a){var s=0,r=A.M(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$BO=A.I(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:i=n.ax.ay
-h=A.de("http","localhost:8080","/sale/getOverallSales",a)
+h=A.de("http","172.26.224.1:8080","/sale/getOverallSales",a)
 p=4
 k=t.N
 s=7
@@ -106478,7 +106478,7 @@ BI(a){return this.abh(a)},
 abh(a){var s=0,r=A.M(t.j),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$BI=A.I(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:i=n.ax.ay
-h=A.de("http","localhost:8080","/sale/getDetailsOfSale/"+a,null)
+h=A.de("http","172.26.224.1:8080","/sale/getDetailsOfSale/"+a,null)
 p=4
 k=t.N
 s=7
@@ -106954,7 +106954,7 @@ p.n(0,"transports",A.b(["websocket"],t.s))
 p.n(0,"autoConnect",!1)
 p.n(0,"auth",A.U(["token",m],q,q))
 p.n(0,"extraHeaders",A.U(["Authorization","Bearer "+m],r,q))
-p=A.b0D("http://localhost:8080",p)
+p=A.b0D("http://172.26.224.1:8080",p)
 n.ax=p
 p.fo("connect",new A.abP())
 r=n.ax
@@ -106970,7 +106970,7 @@ var $async$Fs=A.I(function(b,c){if(b===1){p.push(c)
 s=q}for(;;)switch(s){case 0:g=$.a6()
 A.ET(g,B.es,!1,t.z)
 q=3
-n=A.de("http","localhost:8080","/chat/rooms",null)
+n=A.de("http","172.26.224.1:8080","/chat/rooms",null)
 j=t.N
 i=A.U(["Authorization","Bearer "+A.k(o.ay.ay),"Content-Type","application/json"],j,j)
 s=6
@@ -107002,7 +107002,7 @@ s=p}for(;;)switch(s){case 0:f=m.ay
 if(f.ay==null){s=1
 break}p=4
 m.CW.sl(!0)
-l=A.de("http","localhost:8080","/chat/rooms",null)
+l=A.de("http","172.26.224.1:8080","/chat/rooms",null)
 h=t.N
 s=7
 return A.O(A.hq(l,A.U(["Authorization","Bearer "+A.k(f.ay)],h,h)),$async$v_)
@@ -107108,7 +107108,7 @@ m.cy.sl(!0)
 g=m.ay.ax
 if(g!=null)g.lw("join_room",A.U(["room_id",m.ax.a],t.N,t.S))
 g=t.N
-l=A.de("http","localhost:8080","/chat/rooms/"+m.ax.a+"/messages",A.U(["limit","50"],g,t.z))
+l=A.de("http","172.26.224.1:8080","/chat/rooms/"+m.ax.a+"/messages",A.U(["limit","50"],g,t.z))
 f=m.ch
 s=7
 return A.O(A.hq(l,A.U(["Authorization","Bearer "+A.k(f.ay)],g,g)),$async$DH)
@@ -107169,7 +107169,7 @@ zt(){var s=0,r=A.M(t.H),q=1,p=[],o=[],n=this,m,l,k,j,i,h,g
 var $async$zt=A.I(function(a,b){if(a===1){p.push(b)
 s=q}for(;;)switch(s){case 0:q=3
 n.dy.sl(!0)
-m=A.de("http","localhost:8080","/chat/rooms/"+n.ax.a+"/members",null)
+m=A.de("http","172.26.224.1:8080","/chat/rooms/"+n.ax.a+"/members",null)
 i=t.N
 s=6
 return A.O(A.hq(m,A.U(["Authorization","Bearer "+A.k(n.ch.ay)],i,i)),$async$zt)
@@ -107201,7 +107201,7 @@ ES(a){return this.aEw(a)},
 aEw(a){var s=0,r=A.M(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g
 var $async$ES=A.I(function(b,c){if(b===1){p.push(c)
 s=q}for(;;)switch(s){case 0:q=3
-n=A.de("http","localhost:8080","/chat/rooms/"+o.ax.a+"/addMemberToRoom",null)
+n=A.de("http","172.26.224.1:8080","/chat/rooms/"+o.ax.a+"/addMemberToRoom",null)
 j=t.N
 i=A.U(["Authorization","Bearer "+A.k(o.ch.ay),"Content-Type","application/json"],j,j)
 s=6
@@ -107228,7 +107228,7 @@ I9(a){return this.aOi(a)},
 aOi(a){var s=0,r=A.M(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g
 var $async$I9=A.I(function(b,c){if(b===1){p.push(c)
 s=q}for(;;)switch(s){case 0:q=3
-n=A.de("http","localhost:8080","/chat/rooms/"+o.ax.a+"/members/"+a+"/removeMemberFromRoom",null)
+n=A.de("http","172.26.224.1:8080","/chat/rooms/"+o.ax.a+"/members/"+a+"/removeMemberFromRoom",null)
 j=t.N
 s=6
 return A.O(A.aUK(n,A.U(["Authorization","Bearer "+A.k(o.ch.ay)],j,j)),$async$I9)
@@ -107264,7 +107264,7 @@ s=q}for(;;)switch(s){case 0:h=a.e
 g=!h.gl()
 f=g?"mute":"unmute"
 q=3
-n=A.de("http","localhost:8080","/chat/rooms/"+o.ax.a+"/members/"+a.a+"/"+A.k(f),null)
+n=A.de("http","172.26.224.1:8080","/chat/rooms/"+o.ax.a+"/members/"+a.a+"/"+A.k(f),null)
 j=t.N
 s=6
 return A.O(A.aQ8(n,null,A.U(["Authorization","Bearer "+A.k(o.ch.ay)],j,j)),$async$Iq)
@@ -107650,7 +107650,7 @@ if(a==null)a=$.an=B.G
 m=a.cb(null,t.F)
 l=A.b([],t.or)
 p=4
-k=A.de("http","localhost:8080","/manager/getEmployeesOfMyShop",null)
+k=A.de("http","172.26.224.1:8080","/manager/getEmployeesOfMyShop",null)
 a=t.N
 s=7
 return A.O(A.hq(k,A.U(["Authorization","Bearer "+A.k(m.ay)],a,a)),$async$Eh)
@@ -107798,7 +107798,7 @@ ix(){this.ky()
 this.G_()
 this.an4()},
 an4(){var s=this,r=s.ax.ay,q=t.N
-q=A.b0D("http://localhost:8080",A.U(["transports",A.b(["websocket"],t.s),"autoConnect",!0,"auth",A.U(["token",r],q,t.ob)],q,t.z))
+q=A.b0D("http://172.26.224.1:8080",A.U(["transports",A.b(["websocket"],t.s),"autoConnect",!0,"auth",A.U(["token",r],q,t.ob)],q,t.z))
 s.ay=q
 q.fo("connect",new A.apo(s))
 s.ay.fo("disconnect",new A.app())},
@@ -107807,7 +107807,7 @@ G_(){var s=0,r=A.M(t.H),q=1,p=[],o=[],n=this,m,l,k,j,i,h,g
 var $async$G_=A.I(function(a,b){if(a===1){p.push(b)
 s=q}for(;;)switch(s){case 0:q=3
 n.CW.sl(!0)
-m=A.de("http","localhost:8080","/notifications",null)
+m=A.de("http","172.26.224.1:8080","/notifications",null)
 i=t.N
 s=6
 return A.O(A.hq(m,A.U(["Authorization","Bearer "+A.k(n.ax.ay)],i,i)),$async$G_)
@@ -108083,7 +108083,7 @@ if(a.length!==0)J.cp(j,"searchManufacturer",a)
 a=m.dx.a.a
 if(a.length!==0)J.cp(j,"searchDrugType",a)
 i=j
-h=A.de("http","localhost:8080","/shop/getMyShopAnalysis",i)
+h=A.de("http","172.26.224.1:8080","/shop/getMyShopAnalysis",i)
 s=7
 return A.O(A.hq(h,A.U(["authorization","Bearer "+A.k(k)],b,b)),$async$zr)
 case 7:g=a6
